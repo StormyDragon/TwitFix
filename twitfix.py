@@ -331,7 +331,7 @@ def favicon():
 
 def direct_video(video_link): # Just get a redirect to a MP4 link from any tweet link
     cached_vnf = getVnfFromLinkCache(video_link)
-    if cached_vnf == None:
+    if cached_vnf is None:
         try:
             vnf = link_to_vnf(video_link)
             addVnfToLinkCache(video_link, vnf)
@@ -346,7 +346,7 @@ def direct_video(video_link): # Just get a redirect to a MP4 link from any tweet
 
 def direct_video_link(video_link): # Just get a redirect to a MP4 link from any tweet link
     cached_vnf = getVnfFromLinkCache(video_link)
-    if cached_vnf == None:
+    if cached_vnf is None:
         try:
             vnf = link_to_vnf(video_link)
             addVnfToLinkCache(video_link, vnf)
@@ -379,7 +379,7 @@ def getStats(day):
 def embed_video(video_link, image=0): # Return Embed from any tweet link
     cached_vnf = getVnfFromLinkCache(video_link)
 
-    if cached_vnf == None:
+    if cached_vnf is None:
         try:
             vnf = link_to_vnf(video_link)
             addVnfToLinkCache(video_link, vnf)
