@@ -15,6 +15,9 @@ Flask-Cors = "^3.0.10"
 pymongo = { version = "^4.0.2", optional=true }
 uWSGI = { version = "^2.0.20", optional=true }
 
+# Container optional
+gunicorn = { version = "^20.1.0", optional=true }
+
 [tool.poetry.dev-dependencies]
 
 [build-system]
@@ -23,3 +26,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.extras]
 deploy-here = ["pymongo", "uWSGI"]
+deploy-compose = ["pymongo", "gunicorn"]
