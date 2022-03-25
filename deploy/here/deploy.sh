@@ -17,7 +17,7 @@ After=network.target
 [Service]
 WorkingDirectory=${PROJECT_DIR}
 Environment=TWITFIX_CONFIG_JSON=${PROJECT_DIR}/config.json
-ExecStartPre=${POETRY_LOCATION} install --extra "deploy-here"
+ExecStartPre=${POETRY_LOCATION} install --extras "deploy-here"
 ExecStart=${POETRY_LOCATION} run uwsgi --ini twitfix.ini
 
 [Install]
