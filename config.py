@@ -1,5 +1,6 @@
 import os
 import json
+from pathlib import Path
 
 
 def _env(suffix: str, optional=False):
@@ -34,8 +35,9 @@ def load_configuration():
             },            
         }
     else: 
-        if not os.path.exists("config.json"):
-            with open("config.json", "w") as outfile:
+        config_file = Path(_env("CONFIG_JSON", optional=True) or "./config.json")
+        if not config_file.exists():
+            with config_file.open('w') as outfile:
                 default_config = {
                     "config":{
                         "link_cache":"json",
@@ -58,7 +60,7 @@ def load_configuration():
                 json.dump(default_config, outfile, indent=4, sort_keys=True)
             config = default_config
         else:
-            f = open("config.json")
+            f = config_file.open()
             config = json.load(f)
             f.close()
     return config
