@@ -205,7 +205,7 @@ function createTweet(json) {
             imgPrev(img);
         });
         share.addEventListener("click", () =>
-            navigator.clipboard.writeText(json["tweet"].replace("https://t", "https://fxt"))
+            navigator.clipboard.writeText(json["tweet"].replace("https://twitter.com", `https://${location.host}`))
         );
         tweetCount++;
     } else {
