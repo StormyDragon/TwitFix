@@ -8,6 +8,12 @@ try:
 except:
     pass
 
+try:
+    import google.cloud.firestore
+except:
+    pass
+
+
 class LinkCacheBase:
     def __init__(self, config) -> None:
         pass
@@ -51,6 +57,41 @@ class MongoDBCache(LinkCacheBase):
         collection = self.db.linkCache
         return list(collection.find(sort = [(field, pymongo.DESCENDING )]).skip(offset).limit(count))
 
+
+class FirestoreCache(LinkCacheBase):
+    # Maybe extract, not really sensitive information.
+    namespace = UUID("135679dc-738a-4596-8bd2-9a70c1cea8c2")
+
+    def __init__(self, config) -> None:
+        self.fire = google.cloud.firestore.Client()
+        self.links = self.fire.collection('links')
+    
+    def _hash(self, link: str):
+        # Links may contain weirdnesses unsuitable for storing as a key, so we namespace hash it
+        # This allows us to lookup video links directly in the database.
+        return uuid5(self.namespace, link).hex
+
+    def add_link_to_cache(self, video_link: str, vnf):
+        id_ = self._hash(video_link)
+        self.links.document(id_).set({
+            **vnf,
+            "_id": id_,
+            'created_at': google.cloud.firestore.SERVER_TIMESTAMP
+        })
+
+    def get_link_from_cache(self, video_link: str):
+        ref = self.links.document(self._hash(video_link))
+        doc = ref.get()
+        if not doc.exists:
+            return None
+        ref.update({"hits": google.cloud.firestore.Increment(1)})
+        return doc.to_dict()
+
+    def get_links_from_cache(self, field: str, count: int, offset: int):
+        docs = self.links.order_by(field, direction="DESCENDING").offset(offset).limit(count).get()
+        return [doc.to_dict() for doc in docs]
+
+
 # This might be fine to use under local development, but once you got a huge site running or you need
 # to spread the load, this local-only system will not be useful.
 class JSONCache(LinkCacheBase):
@@ -93,6 +134,11 @@ def initialize_link_cache(link_cache_type: str, config) -> LinkCacheBase:
         if not globals().get('pymongo'):
             raise LookupError("the pymongo library was not included during build.")
         return MongoDBCache(config)
+
+    if link_cache_type == "firestore":
+        if not globals().get('google'):
+            raise LookupError("the pymongo library was not included during build.")
+        return FirestoreCache(config)
 
     if link_cache_type == "json":
         return JSONCache(config)

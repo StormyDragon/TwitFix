@@ -1,9 +1,16 @@
+from datetime import timedelta
 import os
 import pathlib
 import shutil
 from typing import Tuple
+from uuid import UUID, uuid5
 
 import urllib3
+
+try:
+    import google.cloud.storage
+except:
+    pass
 
 
 class StorageBase:
@@ -57,6 +64,29 @@ class LocalFilesystem(StorageBase):
         return None
 
 
+class GoogleCloudStorage(StorageBase):
+    STORAGE_NAMESPACE = UUID("dbc14e27-a6ed-4343-98ef-285aa17cacfd")
+
+    def __init__(self, config) -> None:
+        bucket = config['config']['gcp_bucket']
+        self.client = google.cloud.storage.Client()
+        self.bucket = self.client.get_bucket(bucket)
+
+    def store_media(self, url: str) -> Tuple[bool, str]:
+        name = uuid5(self.STORAGE_NAMESPACE, url)
+        blob = self.bucket.blob(name, chunk_size=2**18)
+        if blob.exists():
+            return name
+        else:
+            mp4file = urllib3.request.urlopen(url)
+            blob.upload_from_file(mp4file)
+
+        return name
+
+    def retrieve_media(self, own_identifier: str):
+        url = self.bucket.get_blob(own_identifier).generate_signed_url(timedelta(minutes=5))
+        return {"output": "url", "url": url}
+
 class NoStorage(StorageBase):
     def store_media(self, url: str):
         return False, url
@@ -68,6 +98,9 @@ class NoStorage(StorageBase):
 def initialize_storage(storage_type: str, config) -> StorageBase:
     if storage_type == "local":
         return LocalFilesystem(config)
+
+    if storage_type == "gcp_storage":
+        return GoogleCloudStorage(config)
 
     if storage_type == "none":
         return NoStorage()
