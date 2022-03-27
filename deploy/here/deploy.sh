@@ -25,3 +25,8 @@ WantedBy=default.target
 EOF
 systemctl --user enable twitfix.service
 systemctl --user start twitfix.service
+
+echo "User local service installed."
+echo "If the service must run at all times then it must be installed as a system service"
+echo "Alternatively read about lingering at:"
+echo "https://www.freedesktop.org/software/systemd/man/loginctl.html#enable-linger%20USER%E2%80%A6"
