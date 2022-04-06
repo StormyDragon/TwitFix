@@ -17,8 +17,8 @@ from .link_cache import initialize_link_cache
 from .stats_module import initialize_stats
 from .storage_module import initialize_storage
 
-static_folder = Path('../static').resolve()
-template_folder = Path('../templates').resolve()
+static_folder = Path('static').resolve()
+template_folder = Path('templates').resolve()
 print(static_folder, template_folder)
 app = Flask(__name__, static_folder=str(static_folder), template_folder=str(template_folder))
 CORS(app)
