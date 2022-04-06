@@ -61,7 +61,7 @@ locals {
     "TWITFIX_TWITTER_ACCESS_SECRET" = "[keep-in-secret-file]"
   }
   config               = merge(local.default_config, jsondecode(data.local_file.config.content))
-  project_source_path  = abspath("${path.cwd}/../../twitfix")
+  project_source_path  = abspath("${path.cwd}/../../src")
   docker_registry      = "${var.google_cloud_region}-docker.pkg.dev"
   google_artifact_repo = "${local.docker_registry}/${var.google_cloud_project}/${google_artifact_registry_repository.twitfix-repo.repository_id}"
 }
@@ -147,7 +147,7 @@ resource "random_string" "random" {
   length  = 8
   special = false
   keepers = {
-    python_files = sha1(join("", [for f in fileset(local.project_source_path, "src/*.py") : filesha1("${local.project_source_path}/${f}")]))
+    python_files = sha1(join("", [for f in fileset(local.project_source_path, "twitfix/*.py") : filesha1("${local.project_source_path}/${f}")]))
     poetry       = sha1(join("", [for f in fileset(local.project_source_path, "{poetry.lock,poetry.toml,pyproject.toml}") : filesha1("${local.project_source_path}/${f}")]))
     static       = sha1(join("", [for f in fileset(local.project_source_path, "static/*") : filesha1("${local.project_source_path}/${f}")]))
     templates    = sha1(join("", [for f in fileset(local.project_source_path, "templates/*") : filesha1("${local.project_source_path}/${f}")]))

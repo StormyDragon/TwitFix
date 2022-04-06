@@ -1,7 +1,7 @@
 #!/bin/bash
 
 POETRY_LOCATION=$(type -P -a poetry)
-PROJECT_DIR=$(readlink -f "$(dirname -- "${BASH_SOURCE[0]}")/../..")
+PROJECT_DIR=$(readlink -f "$(dirname -- "${BASH_SOURCE[0]}")/../../src")
 
 if [[ -z "${POETRY_LOCATION}" ]]
     echo "Poetry must be installed"
