@@ -1,4 +1,4 @@
-from twitfix import app
+from .twitfix_app import app
 
 if __name__ == "__main__":
     # listen on 0.0.0.0 to facilitate testing with real services
