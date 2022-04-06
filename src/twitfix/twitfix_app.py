@@ -9,13 +9,16 @@ import os
 import urllib.parse
 import urllib.request
 from datetime import date
+from pathlib import Path
 
-from config import load_configuration
-from link_cache import initialize_link_cache
-from stats_module import initialize_stats
-from storage_module import initialize_storage
+from .config import load_configuration
+from .link_cache import initialize_link_cache
+from .stats_module import initialize_stats
+from .storage_module import initialize_storage
 
-app = Flask(__name__)
+static_folder = Path('../static').absolute()
+template_folder = Path('../template').absolute()
+app = Flask(__name__, template_folder=template_folder)
 CORS(app)
 
 pathregex = re.compile("\\w{1,15}\\/(status|statuses)\\/\\d{2,20}")
@@ -60,12 +63,12 @@ def latest():
 
 @app.route('/copy.svg') # Return a SVG needed for Latest
 def icon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
+    return send_from_directory(static_folder,
                           'copy.svg',mimetype='image/svg+xml') 
 
 @app.route('/font.ttf') # Return a font needed for Latest
 def font():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
+    return send_from_directory(static_folder,
                           'NotoColorEmoji.ttf',mimetype='application/octet-stream') 
 
 @app.route('/top/') # Try to return the most hit video
@@ -263,7 +266,7 @@ def dir(sub_path):
 
 @app.route('/favicon.ico') # This shit don't work
 def favicon():
-    return send_from_directory(os.path.join(app.root_path, 'static'),
+    return send_from_directory(static_folder,
                           'favicon.ico',mimetype='image/vnd.microsoft.icon')
 
 def add_link_to_cache(video_link, vnf):
