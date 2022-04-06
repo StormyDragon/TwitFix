@@ -6,6 +6,11 @@ try:
 except:
     pass
 
+try:
+    import google.cloud.firestore
+except:
+    pass
+
 
 class StatsBase:
     def __init__(self, config) -> None:
@@ -37,6 +42,35 @@ class MongoStats(StatsBase):
         return collection
 
 
+class FirestoreStats(StatsBase):
+    def __init__(self, config) -> None:
+        self.fire = google.cloud.firestore.Client()
+        self.stats = self.fire.collection('statistics')
+    
+    def add_to_stat(self, metric: str):
+        today = str(date.today())
+        update = {
+            "date": today,
+            "embeds": google.cloud.firestore.Increment(0),
+            "linksCached": google.cloud.firestore.Increment(0),
+            "api": google.cloud.firestore.Increment(0),
+            "downloads": google.cloud.firestore.Increment(0),
+        }
+        update[metric] = google.cloud.firestore.Increment(1)
+        self.stats.document(today).set(update, merge=True)
+    
+    def get_stats(self, day: str):
+        doc = self.stats.document(day).get()
+        return {
+            "date": day,
+            "embeds": 0,
+            "linksCached": 0,
+            "api": 0,
+            "downloads": 0,
+            **doc.to_dict()
+        }
+
+
 class NoStats(StatsBase):
     def __init__(self, config) -> None:
         pass
@@ -51,6 +85,12 @@ def initialize_stats(stat_module: str, config) -> StatsBase:
         if not globals().get('pymongo'):
             raise LookupError("the pymongo library was not included during build.")
         return MongoStats(config)
+
+    if stat_module == "firestore":
+        if not globals().get('google'):
+            raise LookupError("the firestore library was not included during build.")
+        print(" ➤ [ ✔ ] Stats module backed by Firestore")
+        return FirestoreStats(config)
 
     if stat_module in ["none", "json"]:
         print(" ➤ [ X ] Stats module disabled")

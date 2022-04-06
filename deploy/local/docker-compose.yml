@@ -1,0 +1,39 @@
+services:
+  twitfix:
+    build:
+      context: ../..
+      args:
+        EXTRAS: deploy-compose
+    ports:
+      - "8080:8080"
+    volumes:
+      - downloads:/downloads
+    links:
+      - mongo
+    environment:
+      TWITFIX_CONFIG_FROM: environment
+      TWITFIX_LINK_CACHE: db
+      TWITFIX_DB: mongodb://mongo:dra8onrulz@mongo:27017/
+      TWITFIX_DB_TABLE: TwiFix
+      TWITFIX_DOWNLOAD_METHOD: youtube-dl
+      TWITFIX_COLOR: "#43B581"
+      TWITFIX_APP_NAME: TwitFix
+      TWITFIX_REPO: "https://github.com/robinuniverse/twitfix"
+      TWITFIX_BASE_URL: "http://localhost:8080"
+      TWITFIX_STORAGE_LOCAL_BASE: /downloads
+
+      TWITFIX_TWITTER_API_KEY: ""
+      TWITFIX_TWITTER_API_SECRET: ""
+      TWITFIX_TWITTER_ACCESS_TOKEN: ""
+      TWITFIX_TWITTER_ACCESS_SECRET: ""
+  mongo:
+    image: mongo
+    volumes:
+      - mongoDatabase:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongo
+      MONGO_INITDB_ROOT_PASSWORD: dra8onrulz
+volumes:
+  mongoDatabase: {}
+  downloads: {}
+  
