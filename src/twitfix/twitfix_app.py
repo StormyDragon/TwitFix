@@ -1,24 +1,26 @@
-from flask import Flask, render_template, request, redirect, Response, send_from_directory, send_file, make_response
-from flask_cors import CORS
-import youtube_dl
-import textwrap
-import twitter
 import json
 import re
-import os
+import textwrap
 import urllib.parse
 import urllib.request
 from datetime import date
 from pathlib import Path
+
+import twitter
+import youtube_dl
+from flask import (Flask, Response, make_response, redirect, render_template,
+                   request, send_file, send_from_directory)
+from flask_cors import CORS
 
 from .config import load_configuration
 from .link_cache import initialize_link_cache
 from .stats_module import initialize_stats
 from .storage_module import initialize_storage
 
-static_folder = Path('../static').absolute()
-template_folder = Path('../template').absolute()
-app = Flask(__name__, template_folder=template_folder)
+static_folder = Path('../static').resolve()
+template_folder = Path('../templates').resolve()
+print(static_folder, template_folder)
+app = Flask(__name__, static_folder=str(static_folder), template_folder=str(template_folder))
 CORS(app)
 
 pathregex = re.compile("\\w{1,15}\\/(status|statuses)\\/\\d{2,20}")
