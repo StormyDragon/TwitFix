@@ -3,6 +3,10 @@ name = "twitfix"
 version = "0.1.0"
 description = ""
 authors = ["robinuniverse"]
+include = [
+    "static/*",
+    "templates/*",
+]
 
 [tool.poetry.dependencies]
 python = "^3.8"

@@ -4,7 +4,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir poetry
 COPY poetry.lock poetry.toml pyproject.toml ./
 RUN poetry install --extras $EXTRAS
-COPY links.json *.py twitfix.ini ./
+COPY src/ src/
 COPY static/ static/
 COPY templates/ templates/
 
