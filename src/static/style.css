@@ -1,7 +1,7 @@
 @font-face {
     font-family: NotoColorEmojiLimited;
     unicode-range: U+1F1E6-1F1FF;
-    src: url("/font.ttf");
+    src: url("/static/NotoColorEmoji.ttf");
   }
   
 :root {

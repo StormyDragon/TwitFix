@@ -265,7 +265,7 @@ function createTweet(json) {
         const rts = createEl("div", "cont", { inner: `${json["rts"]} Retweets` });
         const lks = createEl("div", "cont", { inner: `${json["likes"]} Likes` });
 
-        const share = createEl("img", "share", { src: "/copy.svg" });
+        const share = createEl("img", "share", { src: "/static/copy.svg" });
 
         meta.appendChild(rts);
         meta.appendChild(lks);
