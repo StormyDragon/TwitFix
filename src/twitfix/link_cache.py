@@ -1,7 +1,7 @@
+import json
 from itertools import islice
 from typing import Any, List, Optional
-from uuid import uuid5, UUID
-import json
+from uuid import UUID, uuid5
 
 try: 
     import pymongo

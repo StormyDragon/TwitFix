@@ -1,6 +1,7 @@
 import os
 
 from gunicorn.app.base import BaseApplication
+
 from .twitfix_app import app
 
 
