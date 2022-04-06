@@ -1,2 +1,5 @@
 config.json
+.venv
 __pycache__
+*.backup
+.terraform
