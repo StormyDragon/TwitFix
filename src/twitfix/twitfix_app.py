@@ -63,16 +63,6 @@ def statsPage():
 def latest():
     return render_template('latest.html')
 
-@app.route('/copy.svg') # Return a SVG needed for Latest
-def icon():
-    return send_from_directory(static_folder,
-                          'copy.svg',mimetype='image/svg+xml') 
-
-@app.route('/font.ttf') # Return a font needed for Latest
-def font():
-    return send_from_directory(static_folder,
-                          'NotoColorEmoji.ttf',mimetype='application/octet-stream') 
-
 @app.route('/top/') # Try to return the most hit video
 def top():
     try:
