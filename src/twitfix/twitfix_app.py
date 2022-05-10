@@ -365,9 +365,11 @@ def tweetInfo(url, tweet="", desc="", thumb="", uploader="", screen_name="", pfp
 
 def link_to_vnf_from_api(video_link):
     print(" ➤ [ + ] Attempting to download tweet info from Twitter API")
-    imgs = ["","","",""] # initialize this in this scope to not cause errors
     twid = int(re.sub(r'\?.*$','',video_link.rsplit("/", 1)[-1])) # gets the tweet ID as a int from the passed url
     tweet = twitter_api.statuses.show(_id=twid, tweet_mode="extended")
+    # For when I need to poke around and see what a tweet looks like
+    #print(tweet)
+    imgs = ["","","","", ""]
     print(" ➤ [ + ] Tweet Type: " + tweetType(tweet))
     # Check to see if tweet has a video, if not, make the url passed to the VNF the first t.co link in the tweet
     if tweetType(tweet) == "Video":
@@ -381,6 +383,7 @@ def link_to_vnf_from_api(video_link):
         url   = ""
         thumb = ""
     else:
+        imgs = ["","","","", ""]
         i = 0
         for media in tweet['extended_entities']['media']:
             imgs[i] = media['media_url_https']
@@ -389,6 +392,7 @@ def link_to_vnf_from_api(video_link):
         #print(imgs)
         imgs[4] = str(i)
         url   = ""
+        images= imgs
         thumb = tweet['extended_entities']['media'][0]['media_url_https']
 
     qrt = {}
