@@ -15,6 +15,8 @@ window.onload = () => {
     const notsafe = document.querySelector("#notsafe");
     if (document.cookie.includes("NSFW=true")) {
         notsafe.checked = true;
+        document.querySelectorAll(".nsfw").forEach(e => e.classList.add("noff"));
+        addCookie("NSFW", true);
         isNSFWSHOW = true;
     }
     if (document.cookie.includes("always=true")) {
@@ -43,10 +45,10 @@ window.onload = () => {
 }
 
 function addCookie(name, state) {
-    if (state)
-        document.cookie = `${name}=${state}; max-age=15780000; SameSite=None; Secure`;
+    if (document.cookie.includes(name))
+        document.cookie = document.cookie.replace(`${name}=${!state}`, `${name}=${state}`);
     else
-        document.cookie = `${name}=`;
+        document.cookie += `${name}=${state}; max-age=15780000; SameSite=None; Secure`;
 }
 
 function cookieTime() {
