@@ -72,11 +72,6 @@ def bidoof():
     )
 
 
-@app.route("/discord/")
-def discord():
-    return redirect("https://discord.gg/ztz2hHwZXv", 301)
-
-
 @app.route("/stats/")
 def statsPage():
     today = str(date.today())
