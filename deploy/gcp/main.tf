@@ -31,7 +31,7 @@ resource "google_service_account" "twitfix" {
 
 resource "google_storage_bucket_iam_member" "storage_permission" {
   bucket = google_storage_bucket.media_store.name
-  role   = "roles/storage.objectAdmin"
+  role   = "roles/storage.admin"
   member = "serviceAccount:${google_service_account.twitfix.email}"
 }
 
