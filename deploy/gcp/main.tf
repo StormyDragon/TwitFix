@@ -171,7 +171,7 @@ resource "random_string" "random" {
   length  = 8
   special = false
   keepers = {
-    python_files = sha1(join("", [for f in fileset(local.project_source_path, "twitfix/*.py") : filesha1("${local.project_source_path}/${f}")]))
+    python_files = sha1(join("", [for f in fileset(local.project_source_path, "**/*.py") : filesha1("${local.project_source_path}/${f}")]))
     poetry       = sha1(join("", [for f in fileset(local.project_source_path, "{poetry.lock,poetry.toml,pyproject.toml}") : filesha1("${local.project_source_path}/${f}")]))
     static       = sha1(join("", [for f in fileset(local.project_source_path, "static/*") : filesha1("${local.project_source_path}/${f}")]))
     templates    = sha1(join("", [for f in fileset(local.project_source_path, "templates/*") : filesha1("${local.project_source_path}/${f}")]))
