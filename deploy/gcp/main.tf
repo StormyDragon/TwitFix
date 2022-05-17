@@ -24,6 +24,30 @@ variable "twitfix_config_file" {
   default = "secret-config.json"
 }
 
+resource "google_service_account" "twitfix" {
+  account_id   = "twitfix-service-account"
+  display_name = "Service Account For Run Service"
+}
+
+resource "google_storage_bucket_iam_member" "storage_permission" {
+  bucket = google_storage_bucket.media_store.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.twitfix.email}"
+}
+
+resource "google_project_iam_member" "firestore_permission" {
+  project = var.google_cloud_project
+  role    = "roles/datastore.user"
+
+  member  = "serviceAccount:${google_service_account.twitfix.email}"
+}
+
+resource "google_project_iam_member" "token_signer_permission" {
+  project = var.google_cloud_project
+  role    = "roles/iam.serviceAccountTokenCreator"
+  member  = "serviceAccount:${google_service_account.twitfix.email}"
+}
+
 resource "google_storage_bucket" "media_store" {
   name = "${var.google_cloud_project}-media-bucket"
   # https://cloud.google.com/storage/docs/locations
@@ -187,6 +211,7 @@ resource "google_cloud_run_service" "twitfix-run-service" {
 
   template {
     spec {
+      service_account_name  = google_service_account.twitfix.email
       containers {
         image = docker_registry_image.twitfix-image.name
         dynamic "env" {
