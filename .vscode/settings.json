@@ -1,0 +1,7 @@
+{
+    "python.formatting.provider": "black",
+    "python.defaultInterpreterPath": "src/.venv/bin/python",
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    }
+}

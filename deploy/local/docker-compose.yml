@@ -1,7 +1,7 @@
 services:
   twitfix:
     build:
-      context: ../..
+      context: ../../src
       args:
         EXTRAS: deploy-compose
     ports:

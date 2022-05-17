@@ -1,2 +1,3 @@
-secret-config.json
+*.json
 *.tfstate
+*.tfvars
