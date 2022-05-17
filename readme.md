@@ -1,64 +1,89 @@
 # TwitFix
 
-Basic flask server that serves fixed twitter video embeds to desktop discord by using either the Twitter API or Youtube-DL to grab tweet video information. This also automatically embeds the first link in the text of non video tweets (API Only)
+Flask server that serves fixed twitter video embeds to desktop discord by using either the Twitter API or Youtube-DL to grab tweet video information. This also automatically embeds the first link in the text of non video tweets (API Only)
 
 ## How to use (discord side)
 
 just put the url to the server, and directly after, the full URL to the tweet you want to embed
 
-**I now have a copy of this running on a Linode server, you can use it via the following url**
+**This fork is running in a Google Cloud Run container**
 
 ```
-https://fxtwitter.com/[twitter video url] or [last half of twitter url] (everything past twitter.com/)
+https://ayytwitter.com/[twitter video url] or [last half of twitter url] (everything past twitter.com/)
 ```
 
-You can also simply type out 'fx' directly before 'twitter.com' in any valid twitter video url, and that will convert it into a working TwitFix url, for example:
+You can also simply type out 'ayy' directly before 'twitter.com' in any valid twitter video url, and that will convert it into a working TwitFix url, pretend for example that fx is just ayy, well, you get the gist:
 
 ![example](example.gif)
 
-**Note**: If you enjoy this service, please considering donating via [Ko-Fi](https://ko-fi.com/robin_universe) to help cover server costs
+## Robin Universe's Other Projects:
 
-## Child Projects:
+**Note**: If you enjoy this service, please considering donating via [Ko-Fi](https://ko-fi.com/robin_universe) as the original creator
 
 [TwitFix-Bot](https://github.com/robinuniverse/TwitFix-Bot) - A discord bot for automatically converting normal twitter links posted by users into twitfix links
 
 [TwitFix-Extension](https://github.com/robinuniverse/TwitFix-Extension) - A browser extention that lets you right click twitter videos to copy a twitfix link to your clipboard
 
-# Monthly Contributors
+## How to run
 
-TwitFix is run for free, period, I have no plans to monetize it directly in any way ( no ads, no premium accounts with more features ) so I rely on donations to keep TwitFix running, and I have created the option to [donate on a monthly basis using my KoFi](https://ko-fi.com/robin_universe#tier16328580186740)
+### `deploy/here`
+* `systemd`
+* `poetry`
 
-
-
-Here's a a list of the people who help to keep this project alive! ( current total monthly - $49!!! )
-
-1. [$3] First Contributor and Twitter Funnyman **Chris Burwell** ( [@countchrisdo](https://twitter.com/countchrisdo) on Twitter )
-
-2. [$9] Previously highest Contributor, Suspciously wealthy furry, and a very loving friend **Vectrobe** ( [@Vectrobe](https://twitter.com/Vectrobe) on Twitter )
-
-3. [$10] New highest monthly contributor, **helloitscrash**!
-
-4. [$6] A Mysterious and **Anonymous** contributor...
-
-5. [$10] One of the highest contributors, **Ryan Vilbrandt**!
-
-6. [$3] **Starcat13**, the one with the coolest sounding name
-
-7. [$5] THE LIGHT THROUGH WHICH GOD SPEAKS TO THIS EARTH: **Statek**
-
-8. [$3] **Impulse**, probably the source cheat
-
-9. [$3] a STRONG contendor for coolest name, "**Lost in Art & Magic**"       
-
-## How to run (server side)
-
-this script uses the youtube-dl python module, along with flask, twitter and pymongo, so install those with pip (you can use `pip install -r requirements.txt`) and start the server with `python twitfix.py`
+This `deploy.sh` script installs a user service which runs as long as the user is logged in. Useful for testing. 
+You may also follow directions for making the service linger. The configuration for `uwsgi` lives in `twitfix.ini`
+this is the deployment method used by TwitFix originally.
 
 I have included some files to give you a head start on setting this server up with uWSGI, though if you decide to use uWSGI I suggest you set up mongoDB link caching 
 
+### `deploy/local`
+* `docker`
+* `docker-compose`
+
+`docker-compose up` to launch everything; this is a blueprint using mongodb as the 
+database and a dedicated volume as the download location.
+
+### `deploy/gcp`
+* `terraform`
+* `gcloud`
+* A project set up on google cloud platform.
+
+This deployment script can be run with the following commands which will set up
+a dedicated Cloud Run service with the Firestore database keeping the links and 
+Google Cloud Storage to host files, handled by a dedicated limited service account.
+
+```sh
+terraform init
+terraform apply -var-file template.tfvars
+```
+
 ### Config
 
-TwitFix generates a config.json in its root directory the first time you run it, the options are:
+Configuration can be done through the environment by specifying the environment variable `CONFIG_FROM` with the value `environment`. Some sensible defaults have been added to the various deployment scripts.
+
+```env
+CONFIG_FROM=environment
+TWITFIX_CONFIG_FROM="environment"
+TWITFIX_STORAGE_MODULE="local_storage"
+TWITFIX_LINK_CACHE= "json"
+TWITFIX_DB="..."
+TWITFIX_DB_TABLE="..."
+TWITFIX_DOWNLOAD_METHOD="youtube-dl"
+TWITFIX_COLOR="#43B581"
+TWITFIX_APP_NAME="TwitFix"
+TWITFIX_REPO="https://github.com/stormydragon/twitfix"
+TWITFIX_BASE_URL="https://localhost:8080"
+TWITFIX_DOWNLOAD_BASE="/tmp"
+TWITFIX_TWITTER_API_KEY="..."
+TWITFIX_TWITTER_API_SECRET="..."
+TWITFIX_TWITTER_ACCESS_TOKEN="..."
+TWITFIX_TWITTER_ACCESS_SECRET="..."
+```
+
+### Config (deprecated)
+
+The older method of configuration relies on generating a config.json in the root directory
+the first time you run it, the options are:
 
 **API** - This will be where you put the credentials for your twitter API if you use this method
 
@@ -85,29 +110,3 @@ TwitFix generates a config.json in its root directory the first time you run it,
 **url** - used to tell the user where to look for the oembed endpoint, make sure to set this to your public facing url
 
 This project is licensed under the **Do What The Fuck You Want Public License**
-
-
-
-## Other stuff
-
-Going to `https://fxtwitter.com/latest/` will present a page that shows the all the latest tweets that were added to the database, use with caution as results may be nsfw! Current page created by @DorukSaga
-
-Using the `/dir/<video-url>` endpoint will return a redirect to the direct MP4 link, this can be useful for downloading a video
-
-Using the `/dl/<video-url>` or appending a `.mp4` will make the server download the video and return a static, locally hosted copy
-
-Using the subdomain `d.fxtwitter.com/<video-url>` will redirect to a direct MP4 url hosted on Twitter
-
-Using the `/info/<video-url>` endpoint will return a json that contains all video info that youtube-dl can grab about any given video
-
-Using `/other/<video-url>` will attempt to run the twitter embed stuff on other websites videos - This is mostly experimental and doesn't really work for now 
-
-Using `/api/latest/` will return a json with the latest tweet added to the database. Takes params `?tweets=INT&=pageINT` to return multiple
-
-Using `/api/top/` will return a json with the most hit tweet in the database. Takes params `?tweets=INT&=pageINT` to return multiple
-
-Using `/api/stats/` will return a json with some stats about TwitFix's activity (embeds, new cached links, API hits, downloads). Takes param `?=date"YYYY-MM-DD"` to return a specific day, otherwise will return today's stats to far
-
-Advanced embeds are provided via a `/oembed.json?` endpoint - This is manually pointing at my server in `/templates/index.html` and should be changed from `https://fxtwitter.com/` to whatever your domain is
-
-We check for t.co links in non video tweets, and if one is found, we direct the discord useragent to embed that link directly, this means that twitter links containing youtube / vimeo links will automatically embed those as if you had just directly linked to that content
