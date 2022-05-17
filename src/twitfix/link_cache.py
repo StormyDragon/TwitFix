@@ -3,7 +3,7 @@ from itertools import islice
 from typing import Any, List, Optional
 from uuid import UUID, uuid5
 
-try: 
+try:
     import pymongo
 except:
     pass
@@ -17,18 +17,21 @@ except:
 class LinkCacheBase:
     def __init__(self, config) -> None:
         pass
+
     def add_link_to_cache(self, video_link: str, vnf) -> bool:
         pass
+
     def get_link_from_cache(self, video_link: str) -> Optional[Any]:
         pass
+
     def get_links_from_cache(self, field: str, count: int, offset: int) -> List[Any]:
         pass
 
 
 class MongoDBCache(LinkCacheBase):
     def __init__(self, config) -> None:
-        self.client = pymongo.MongoClient(config['config']['database'], connect=False)
-        table = config['config']['table']
+        self.client = pymongo.MongoClient(config["config"]["database"], connect=False)
+        table = config["config"]["table"]
         self.db = self.client[table]
 
     def add_link_to_cache(self, video_link: str, vnf):
@@ -42,20 +45,26 @@ class MongoDBCache(LinkCacheBase):
 
     def get_link_from_cache(self, video_link: str):
         collection = self.db.linkCache
-        vnf        = collection.find_one({'tweet': video_link})
-        if vnf != None: 
-            hits   = ( vnf.get('hits', 0) + 1 ) 
-            print(f" ➤ [ ✔ ] Link located in DB cache. hits on this link so far: [{hits}]")
-            query  = { 'tweet': video_link }
-            change = { "$inc" : { "hits" : 1 } }
-            out    = self.db.linkCache.update_one(query, change)
+        vnf = collection.find_one({"tweet": video_link})
+        if vnf != None:
+            hits = vnf.get("hits", 0) + 1
+            print(
+                f" ➤ [ ✔ ] Link located in DB cache. hits on this link so far: [{hits}]"
+            )
+            query = {"tweet": video_link}
+            change = {"$inc": {"hits": 1}}
+            out = self.db.linkCache.update_one(query, change)
             return vnf
         else:
             print(" ➤ [ X ] Link not in DB cache")
 
     def get_links_from_cache(self, field: str, count: int, offset: int):
         collection = self.db.linkCache
-        return list(collection.find(sort = [(field, pymongo.DESCENDING )]).skip(offset).limit(count))
+        return list(
+            collection.find(sort=[(field, pymongo.DESCENDING)])
+            .skip(offset)
+            .limit(count)
+        )
 
 
 class FirestoreCache(LinkCacheBase):
@@ -64,8 +73,8 @@ class FirestoreCache(LinkCacheBase):
 
     def __init__(self, config) -> None:
         self.fire = google.cloud.firestore.Client()
-        self.links = self.fire.collection('links')
-    
+        self.links = self.fire.collection("links")
+
     def _hash(self, link: str):
         # Links may contain weirdnesses unsuitable for storing as a key, so we namespace hash it
         # This allows us to lookup video links directly in the database.
@@ -73,11 +82,9 @@ class FirestoreCache(LinkCacheBase):
 
     def add_link_to_cache(self, video_link: str, vnf):
         id_ = self._hash(video_link)
-        self.links.document(id_).set({
-            **vnf,
-            "_id": id_,
-            'created_at': google.cloud.firestore.SERVER_TIMESTAMP
-        })
+        self.links.document(id_).set(
+            {**vnf, "_id": id_, "created_at": google.cloud.firestore.SERVER_TIMESTAMP}
+        )
 
     def get_link_from_cache(self, video_link: str):
         ref = self.links.document(self._hash(video_link))
@@ -88,7 +95,12 @@ class FirestoreCache(LinkCacheBase):
         return doc.to_dict()
 
     def get_links_from_cache(self, field: str, count: int, offset: int):
-        docs = self.links.order_by(field, direction="DESCENDING").offset(offset).limit(count).get()
+        docs = (
+            self.links.order_by(field, direction="DESCENDING")
+            .offset(offset)
+            .limit(count)
+            .get()
+        )
         return [doc.to_dict() for doc in docs]
 
 
@@ -104,39 +116,39 @@ class JSONCache(LinkCacheBase):
             self.link_cache = {}
 
     def _write_cache(self):
-        with open(self.links_cache_filename, "w") as outfile: 
+        with open(self.links_cache_filename, "w") as outfile:
             json.dump(self.link_cache, outfile, indent=4, sort_keys=True)
-
 
     def add_link_to_cache(self, video_link, vnf):
         self.link_cache[video_link] = vnf
         self._write_cache()
 
-    
     def get_link_from_cache(self, video_link):
         if video_link in self.link_cache:
             print(" ➤ [ ✔ ] Link located in json cache")
             vnf = self.link_cache[video_link]
-            vnf['hits'] += 1
+            vnf["hits"] += 1
             self._write_cache()
             return vnf
         else:
             print(" ➤ [ X ] Link not in json cache")
             return None
-    
+
     def get_links_from_cache(self, field: str, count: int, offset: int):
-        sorted_cache = sorted(self.link_cache.values(), key=lambda l: l.get(field), reverse=True)
+        sorted_cache = sorted(
+            self.link_cache.values(), key=lambda l: l.get(field), reverse=True
+        )
         return list(islice(sorted_cache, offset, offset + count))
 
 
 def initialize_link_cache(link_cache_type: str, config) -> LinkCacheBase:
     if link_cache_type == "db":
-        if not globals().get('pymongo'):
+        if not globals().get("pymongo"):
             raise LookupError("the pymongo library was not included during build.")
         return MongoDBCache(config)
 
     if link_cache_type == "firestore":
-        if not globals().get('google'):
+        if not globals().get("google"):
             raise LookupError("the pymongo library was not included during build.")
         return FirestoreCache(config)
 
