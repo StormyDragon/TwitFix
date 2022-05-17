@@ -1,4 +1,4 @@
-Here's a a list of the people who helped keep this project alive!
+Here's a a list of the people who helped get this project off the ground!
 
 1. [$3] First Contributor and Twitter Funnyman **Chris Burwell** ( [@countchrisdo](https://twitter.com/countchrisdo) on Twitter )
 
