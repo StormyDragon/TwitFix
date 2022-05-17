@@ -209,9 +209,17 @@ resource "google_cloud_run_service" "twitfix-run-service" {
   location   = var.google_cloud_region
   depends_on = [google_project_service.run]
 
+
   template {
+    metadata {
+      annotations = {
+        "autoscaling.knative.dev/minScale" = 1
+        "autoscaling.knative.dev/maxScale" = 100
+      }
+    }
     spec {
       service_account_name  = google_service_account.twitfix.email
+      container_concurrency = 1000
       containers {
         image = docker_registry_image.twitfix-image.name
         dynamic "env" {
