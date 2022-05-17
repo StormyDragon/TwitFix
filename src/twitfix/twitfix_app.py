@@ -504,10 +504,8 @@ def embed(video_link, vnf, image):
         urlDesc  = urllib.parse.quote(textwrap.shorten(desc, width=220, placeholder="..."))
         template = 'video.html'
         
-    color = "#7FFFD4" # Green
-
-    if vnf['nsfw'] == True:
-        color = "#800020" # Red
+    # Change the theme color to red if this post is not worksafe.
+    color = "#800020" if vnf['nsfw'] else "#7FFFD4"
 
     return render_template(
         template, 
