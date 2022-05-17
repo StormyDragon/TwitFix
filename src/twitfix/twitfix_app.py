@@ -61,7 +61,7 @@ STAT_MODULE = initialize_stats(link_cache_system, config)
 LINK_CACHE = initialize_link_cache(link_cache_system, config)
 STORAGE_MODULE = initialize_storage(storage_module_type, config)
 
-prefix = config["config"]["prefix"]
+base_url = config["config"]["url"]
 
 
 @app.route("/bidoof/")
@@ -210,10 +210,10 @@ def twitfix(sub_path):
     print(request.url)
 
     if request.url.startswith(
-        f"https://d.{prefix}"
+        f"https://d."
     ):  # Matches d.{fx}? Try to give the user a direct link
         if user_agent in generate_embed_user_agents:
-            print(f" ➤ [ D ] d.{prefix} link shown to discord user-agent!")
+            print(f" ➤ [ D ] d. link shown to discord user-agent!")
             if request.url.endswith(".mp4") and "?" not in request.url:
                 return dl(sub_path)
             else:
@@ -221,7 +221,7 @@ def twitfix(sub_path):
                     "To use a direct MP4 link in discord, remove anything past '?' and put '.mp4' at the end"
                 )
         else:
-            print(f" ➤ [ R ] Redirect to MP4 using d.{prefix}twitter.com")
+            print(f" ➤ [ R ] Redirect to MP4 using d.{base_url}")
             return dir(sub_path)
 
     elif request.url.endswith(".mp4") or request.url.endswith("%2Emp4"):
