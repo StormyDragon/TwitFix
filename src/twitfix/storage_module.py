@@ -37,6 +37,7 @@ class StorageBase:
 class LocalFilesystem(StorageBase):
     def __init__(self, config) -> None:
         super().__init__(config)
+        self.base_url = config['config']['url']
         self.basepath = pathlib.Path(config['config']['download_base'])
 
 
@@ -62,7 +63,7 @@ class LocalFilesystem(StorageBase):
         if not PATH.is_relative_to(self.basepath):
             raise OSError("Invalid media identifier.")
         if PATH.exists() and PATH.is_file() and os.access(PATH, os.R_OK):
-            print(f' ➤ [[ PRESENTING FILE: {own_identifier!r}, URL: https://fxtwitter.com/media/{own_identifier} ]]')
+            print(f' ➤ [[ PRESENTING FILE: {own_identifier!r}, URL: {self.base_url}/media/{own_identifier} ]]')
             return {"output": "file", "content": PATH} # send_file accepts a path and will handle the file from there.
         return None
 
