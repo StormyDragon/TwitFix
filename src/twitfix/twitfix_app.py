@@ -487,6 +487,8 @@ def link_to_vnf_from_api(video_link):
     tweet = twitter_api.statuses.show(_id=twid, tweet_mode="extended")
     # For when I need to poke around and see what a tweet looks like
     # print(tweet)
+    url = ""
+    thumb = ""
     imgs = ["", "", "", "", ""]
     print(" ➤ [ + ] Tweet Type: " + tweetType(tweet))
     # Check to see if tweet has a video, if not, make the url passed to the VNF the first t.co link in the tweet
@@ -503,8 +505,7 @@ def link_to_vnf_from_api(video_link):
                 ):
                     url = video["url"]
     elif tweetType(tweet) == "Text":
-        url = ""
-        thumb = ""
+        pass
     else:
         imgs = ["", "", "", "", ""]
         i = 0
@@ -514,8 +515,6 @@ def link_to_vnf_from_api(video_link):
 
         # print(imgs)
         imgs[4] = str(i)
-        url = ""
-        images = imgs
         thumb = tweet["extended_entities"]["media"][0]["media_url_https"]
 
     qrt = {}
