@@ -78,10 +78,10 @@ class GoogleCloudStorage(StorageBase):
         bucket = config["config"]["gcp_bucket"]
         self.client = google.cloud.storage.Client()
         self.bucket = self.client.get_bucket(bucket)
-        auth_request = requests.Request()
+        auth_session = requests.Session()
         credentials, project = google.auth.default()
         self.signing_credentials = google.auth.compute_engine.IDTokenCredentials(
-            auth_request, "", service_account_email=credentials.service_account_email
+            auth_session.request, "", service_account_email=credentials.service_account_email
         )
 
     def store_media(self, url: str) -> Tuple[bool, str]:
