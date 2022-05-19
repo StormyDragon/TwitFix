@@ -17,6 +17,10 @@ from .link_cache import initialize_link_cache
 from .stats_module import initialize_stats
 from .storage_module import initialize_storage
 
+
+class TwitterUserProtected(Exception):
+    pass
+
 static_folder = Path("static").resolve()
 template_folder = Path("templates").resolve()
 print(static_folder, template_folder)
@@ -400,6 +404,8 @@ def direct_video(video_link):  # Just get a redirect to a MP4 link from any twee
             add_link_to_cache(video_link, vnf)
             return redirect(vnf["url"], 301)
             print(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+        except TwitterUserProtected:
+            return message("This user is guarding their tweets!")
         except Exception as e:
             print(e)
             return message("Failed to scan your link!")
@@ -418,6 +424,8 @@ def direct_video_link(
             add_link_to_cache(video_link, vnf)
             return vnf["url"]
             print(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+        except TwitterUserProtected:
+            return message("This user is guarding their tweets!")
         except Exception as e:
             print(e)
             return message("Failed to scan your link!")
@@ -434,7 +442,8 @@ def embed_video(video_link, image=0):  # Return Embed from any tweet link
             vnf = link_to_vnf(video_link)
             add_link_to_cache(video_link, vnf)
             return embed(video_link, vnf, image)
-
+        except TwitterUserProtected:
+            return message("This user is guarding their tweets!")
         except Exception as e:
             print(e)
             return message("Failed to scan your link!")
@@ -487,6 +496,13 @@ def link_to_vnf_from_api(video_link):
     tweet = twitter_api.statuses.show(_id=twid, tweet_mode="extended")
     # For when I need to poke around and see what a tweet looks like
     # print(tweet)
+    protected = tweet['user']['protected']
+    if protected:
+        raise TwitterUserProtected()
+
+    text = tweet["full_text"]
+    nsfw = tweet.get("possibly_sensitive", False)
+    qrt = {}
     url = ""
     thumb = ""
     imgs = ["", "", "", "", ""]
@@ -517,19 +533,10 @@ def link_to_vnf_from_api(video_link):
         imgs[4] = str(i)
         thumb = tweet["extended_entities"]["media"][0]["media_url_https"]
 
-    qrt = {}
-
     if "quoted_status" in tweet:
         qrt["desc"] = tweet["quoted_status"]["full_text"]
         qrt["handle"] = tweet["quoted_status"]["user"]["name"]
         qrt["screen_name"] = tweet["quoted_status"]["user"]["screen_name"]
-
-    text = tweet["full_text"]
-
-    if "possibly_sensitive" in tweet:
-        nsfw = tweet["possibly_sensitive"]
-    else:
-        nsfw = False
 
     vnf = tweetInfo(
         url,
@@ -569,6 +576,9 @@ def link_to_vnf(video_link):  # Return a VideoInfo object or die trying
     if config["config"]["method"] == "hybrid":
         try:
             return link_to_vnf_from_api(video_link)
+        except TwitterUserProtected:
+            print(" ➤ [ X ] User is protected, stop.")
+            raise
         except Exception as e:
             print(" ➤ [ !!! ] API Failed")
             print(e)
@@ -576,6 +586,9 @@ def link_to_vnf(video_link):  # Return a VideoInfo object or die trying
     elif config["config"]["method"] == "api":
         try:
             return link_to_vnf_from_api(video_link)
+        except TwitterUserProtected:
+            print(" ➤ [ X ] User is protected, stop.")
+            raise
         except Exception as e:
             print(" ➤ [ X ] API Failed")
             print(e)
