@@ -208,8 +208,9 @@ def twitfix(sub_path):
     match = pathregex.search(sub_path)
     print(request.url)
 
-    if request.url.startswith(
-        f"https://d."
+    
+    if request.host.startswith(
+        f"d."
     ):  # Matches d.{fx}? Try to give the user a direct link
         if user_agent in generate_embed_user_agents:
             print(f" ➤ [ D ] d. link shown to discord user-agent!")
