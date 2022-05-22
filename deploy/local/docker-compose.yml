@@ -18,8 +18,9 @@ services:
       TWITFIX_DOWNLOAD_METHOD: youtube-dl
       TWITFIX_COLOR: "#43B581"
       TWITFIX_APP_NAME: TwitFix
-      TWITFIX_REPO: "https://github.com/robinuniverse/twitfix"
+      TWITFIX_REPO: "https://github.com/stormydragon/twitfix"
       TWITFIX_BASE_URL: "http://localhost:8080"
+      TWITFIX_STORAGE_MODULE: local_storage
       TWITFIX_STORAGE_LOCAL_BASE: /downloads
 
       TWITFIX_TWITTER_API_KEY: ""

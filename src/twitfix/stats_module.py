@@ -1,3 +1,4 @@
+from sanic.log import logger
 from contextlib import suppress
 from datetime import date
 from typing import Any
@@ -92,11 +93,11 @@ def initialize_stats(stat_module: str, config) -> StatsBase:
     if stat_module == "firestore":
         if not globals().get("google"):
             raise LookupError("the firestore library was not included during build.")
-        print(" ➤ [ ✔ ] Stats module backed by Firestore")
+        logger.info(" ➤ [ ✔ ] Stats module backed by Firestore")
         return FirestoreStats(config)
 
     if stat_module in ["none", "json"]:
-        print(" ➤ [ X ] Stats module disabled")
+        logger.info(" ➤ [ X ] Stats module disabled")
         return NoStats(config)
 
     raise LookupError(f"Stat module not recognized. {stat_module}")

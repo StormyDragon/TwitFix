@@ -1,4 +1,5 @@
 import json
+from sanic.log import logger
 from contextlib import suppress
 from itertools import islice
 from typing import Any, List, Optional
@@ -34,10 +35,10 @@ class MongoDBCache(LinkCacheBase):
     def add_link_to_cache(self, video_link: str, vnf):
         try:
             out = self.db.linkCache.insert_one(vnf)
-            print(" ➤ [ + ] Link added to DB cache ")
+            logger.info(" ➤ [ + ] Link added to DB cache ")
             return True
         except Exception:
-            print(" ➤ [ X ] Failed to add link to DB cache")
+            logger.info(" ➤ [ X ] Failed to add link to DB cache")
         return False
 
     def get_link_from_cache(self, video_link: str):
@@ -45,7 +46,7 @@ class MongoDBCache(LinkCacheBase):
         vnf = collection.find_one({"tweet": video_link})
         if vnf != None:
             hits = vnf.get("hits", 0) + 1
-            print(
+            logger.info(
                 f" ➤ [ ✔ ] Link located in DB cache. hits on this link so far: [{hits}]"
             )
             query = {"tweet": video_link}
@@ -53,7 +54,7 @@ class MongoDBCache(LinkCacheBase):
             out = self.db.linkCache.update_one(query, change)
             return vnf
         else:
-            print(" ➤ [ X ] Link not in DB cache")
+            logger.info(" ➤ [ X ] Link not in DB cache")
 
     def get_links_from_cache(self, field: str, count: int, offset: int):
         collection = self.db.linkCache
@@ -122,13 +123,13 @@ class JSONCache(LinkCacheBase):
 
     def get_link_from_cache(self, video_link):
         if video_link in self.link_cache:
-            print(" ➤ [ ✔ ] Link located in json cache")
+            logger.info(" ➤ [ ✔ ] Link located in json cache")
             vnf = self.link_cache[video_link]
             vnf["hits"] += 1
             self._write_cache()
             return vnf
         else:
-            print(" ➤ [ X ] Link not in json cache")
+            logger.info(" ➤ [ X ] Link not in json cache")
             return None
 
     def get_links_from_cache(self, field: str, count: int, offset: int):

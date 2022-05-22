@@ -1,4 +1,4 @@
-FROM python:3.8 as builder
+FROM python:3.10 as builder
 ARG EXTRAS
 WORKDIR /app
 RUN pip install --no-cache-dir poetry
@@ -8,7 +8,7 @@ COPY twitfix/ twitfix/
 COPY static/ static/
 COPY templates/ templates/
 
-FROM python:3.8-slim-bullseye
+FROM python:3.10-slim-bullseye
 WORKDIR /app
 RUN pip install --no-cache-dir poetry
 COPY --from=builder /app/ /app/
@@ -16,4 +16,4 @@ COPY --from=builder /app/ /app/
 ENV PORT=8080
 
 STOPSIGNAL SIGTERM
-CMD ["poetry", "run", "serve"]
+CMD ["poetry", "run", "twitfix"]

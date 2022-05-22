@@ -1,3 +1,4 @@
+from sanic.log import logger
 import os
 import pathlib
 import shutil
@@ -7,12 +8,11 @@ from datetime import timedelta
 from typing import Tuple
 from uuid import UUID, uuid5
 
-import requests
-
 with suppress(ImportError):
     import google.auth
     import google.auth.compute_engine
     import google.cloud.storage
+    import requests
 
 
 class StorageBase:
@@ -46,10 +46,10 @@ class LocalFilesystem(StorageBase):
         if not PATH.is_relative_to(self.basepath):
             raise OSError("Invalid media identifier.")
         if PATH.exists() and PATH.is_file() and os.access(PATH, os.R_OK):
-            print(" ➤ [[ FILE EXISTS ]]")
+            logger.info(" ➤ [[ FILE EXISTS ]]")
             return True, filename
 
-        print(" ➤ [[ FILE DOES NOT EXIST, DOWNLOADING... ]]")
+        logger.info(" ➤ [[ FILE DOES NOT EXIST, DOWNLOADING... ]]")
         mp4file = urllib.request.urlopen(url)
         with PATH.open("wb") as output:
             shutil.copyfileobj(mp4file, output)
@@ -60,7 +60,7 @@ class LocalFilesystem(StorageBase):
         if not PATH.is_relative_to(self.basepath):
             raise OSError("Invalid media identifier.")
         if PATH.exists() and PATH.is_file() and os.access(PATH, os.R_OK):
-            print(
+            logger.info(
                 f" ➤ [[ PRESENTING FILE: {own_identifier!r}, URL: {self.base_url}/media/{own_identifier} ]]"
             )
             return {
@@ -116,7 +116,7 @@ class NoStorage(StorageBase):
 
 
 def initialize_storage(storage_type: str, config) -> StorageBase:
-    if storage_type == "local":
+    if storage_type == "local_storage":
         return LocalFilesystem(config)
 
     if storage_type == "gcp_storage":

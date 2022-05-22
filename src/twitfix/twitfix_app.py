@@ -3,33 +3,29 @@ import re
 import textwrap
 import urllib.parse
 import urllib.request
-from datetime import date
-from pathlib import Path
 
-import twitter
+import sanic
+import sanic.response
 import youtube_dl
-from flask import (Flask, Response, make_response, redirect, render_template,
-                   request, send_file, send_from_directory)
-from flask_cors import CORS
+from sanic.log import logger
 
-from .config import load_configuration
-from .link_cache import initialize_link_cache
-from .stats_module import initialize_stats
-from .storage_module import initialize_storage
+from .exceptions import TwitterUserProtected
+from .sanic_jinja import render_template
 
-
-class TwitterUserProtected(Exception):
-    pass
-
-static_folder = Path("static").resolve()
-template_folder = Path("templates").resolve()
-print(static_folder, template_folder)
-app = Flask(
-    __name__, static_folder=str(static_folder), template_folder=str(template_folder)
-)
-CORS(app)
+twitfix_app = sanic.Blueprint("twitfix-embeds")
 
 pathregex = re.compile("\\w{1,15}\\/(status|statuses)\\/\\d{2,20}")
+
+# Where may our links be posted?
+# And what is the default appearance of these?
+#
+# Discord
+# Telegram
+# Slack
+# Facebook
+# Valve Steam Client
+# Valve Steam FriendsUI
+# January (image proxy RevoltChat)
 generate_embed_user_agents = [
     "facebookexternalhit/1.1",
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36",
@@ -46,155 +42,26 @@ generate_embed_user_agents = [
     "test",
 ]
 
-# Read config from config.json. If it does not exist, create new.
-config = load_configuration()
 
-# If method is set to API or Hybrid, attempt to auth with the Twitter API
-if config["config"]["method"] in ("api", "hybrid"):
-    auth = twitter.oauth.OAuth(
-        config["api"]["access_token"],
-        config["api"]["access_secret"],
-        config["api"]["api_key"],
-        config["api"]["api_secret"],
-    )
-    twitter_api = twitter.Twitter(auth=auth)
-
-link_cache_system = config["config"]["link_cache"]
-storage_module_type = config["config"]["storage_module"]
-STAT_MODULE = initialize_stats(link_cache_system, config)
-LINK_CACHE = initialize_link_cache(link_cache_system, config)
-STORAGE_MODULE = initialize_storage(storage_module_type, config)
-
-base_url = config["config"]["url"]
-
-
-@app.route("/bidoof/")
-def bidoof():
-    return redirect(
-        "https://cdn.discordapp.com/attachments/291764448757284885/937343686927319111/IMG_20211226_202956_163.webp",
-        301,
-    )
-
-
-@app.route("/stats/")
-def statsPage():
-    today = str(date.today())
-    stats = STAT_MODULE.get_stats(today)
-    return render_template(
-        "stats.html",
-        embeds=stats["embeds"],
-        downloadss=stats["downloads"],
-        api=stats["api"],
-        linksCached=stats["linksCached"],
-        date=today,
-    )
-
-
-@app.route("/latest/")
-def latest():
-    return render_template("latest.html")
-
-
-@app.route("/top/")  # Try to return the most hit video
-def top():
-    try:
-        [vnf] = LINK_CACHE.get_links_from_cache("hits", 1, 0)
-    except ValueError:
-        print(" ➤ [ ✔ ] Top video page loaded: None yet...")
-        return make_response("", 204)
-    desc = re.sub(r" http.*t\.co\S+", "", vnf["description"])
-    urlUser = urllib.parse.quote(vnf["uploader"])
-    urlDesc = urllib.parse.quote(desc)
-    urlLink = urllib.parse.quote(vnf["url"])
-    print(" ➤ [ ✔ ] Top video page loaded: " + vnf["tweet"])
-    return render_template(
-        "inline.html",
-        page="Top",
-        vidlink=vnf["url"],
-        vidurl=vnf["url"],
-        desc=desc,
-        pic=vnf["thumbnail"],
-        user=vnf["uploader"],
-        video_link=vnf["url"],
-        color=config["config"]["color"],
-        appname=config["config"]["appname"],
-        repo=config["config"]["repo"],
-        url=config["config"]["url"],
-        urlDesc=urlDesc,
-        urlUser=urlUser,
-        urlLink=urlLink,
-        tweet=vnf["tweet"],
-    )
-
-
-@app.route("/api/latest/")  # Return some raw VNF data sorted by top tweets
-def apiLatest():
-    tweets = request.args.get("tweets", default=10, type=int)
-    page = request.args.get("page", default=0, type=int)
-
-    if tweets > 15:
-        tweets = 1
-
-    vnf = LINK_CACHE.get_links_from_cache("_id", tweets, tweets * page)
-
-    print(" ➤ [ ✔ ] Latest video API called")
-    STAT_MODULE.add_to_stat("api")
-    return Response(
-        response=json.dumps(vnf, default=str), status=200, mimetype="application/json"
-    )
-
-
-@app.route("/api/top/")  # Return some raw VNF data sorted by top tweets
-def apiTop():
-    tweets = request.args.get("tweets", default=10, type=int)
-    page = request.args.get("page", default=0, type=int)
-
-    if tweets > 15:
-        tweets = 1
-
-    vnf = LINK_CACHE.get_links_from_cache("hits", tweets, tweets * page)
-
-    print(" ➤ [ ✔ ] Top video API called")
-    STAT_MODULE.add_to_stat("api")
-    return Response(
-        response=json.dumps(vnf, default=str), status=200, mimetype="application/json"
-    )
-
-
-@app.route(
-    "/api/stats/"
-)  # Return a json of a usage stats for a given date (defaults to today)
-def apiStats():
-    try:
-        STAT_MODULE.add_to_stat("api")
-        today = str(date.today())
-        desiredDate = request.args.get("date", default=today, type=str)
-        stat = STAT_MODULE.get_stats(desiredDate)
-        print(" ➤ [ ✔ ] Stats API called")
-        return Response(
-            response=json.dumps(stat, default=str),
-            status=200,
-            mimetype="application/json",
-        )
-    except:
-        print(" ➤ [ ✔ ] Stats API failed")
-
-
-@app.route(
+@twitfix_app.route(
     "/"
 )  # If the useragent is discord, return the embed, if not, redirect to configured repo directly
-def default():
+async def default(request):
     user_agent = request.headers.get("user-agent")
     if user_agent in generate_embed_user_agents:
-        return message(
-            "TwitFix is an attempt to fix twitter video embeds in discord! created by Robin Universe :)\n\n💖\n\nClick me to be redirected to the repo!"
+        return await message(
+            request,
+            "TwitFix is an attempt to fix twitter video embeds in discord! created by Robin Universe :)\n\n💖\n\nClick me to be redirected to the repo!",
         )
     else:
-        return redirect(config["config"]["repo"], 301)
+        logger.info("Just redirecting to github")
+        return sanic.response.redirect(
+            request.app.config.CONFIG["config"]["repo"], status=301
+        )
 
 
-@app.route("/oembed.json")  # oEmbed endpoint
-def oembedend():
+@twitfix_app.route("/oembed.json")  # oEmbed endpoint
+def oembedend(request):
     desc = request.args.get("desc", None)
     user = request.args.get("user", None)
     link = request.args.get("link", None)
@@ -202,27 +69,27 @@ def oembedend():
     return oEmbedGen(desc, user, link, ttype)
 
 
-@app.route("/<path:sub_path>")  # Default endpoint used by everything
-def twitfix(sub_path):
+@twitfix_app.route("/<sub_path:path>")  # Default endpoint used by everything
+async def twitfix(request, sub_path):
     user_agent = request.headers.get("user-agent")
     match = pathregex.search(sub_path)
-    print(request.url)
+    logger.info(request.url)
 
-    
     if request.host.startswith(
         f"d."
     ):  # Matches d.{fx}? Try to give the user a direct link
         if user_agent in generate_embed_user_agents:
-            print(f" ➤ [ D ] d. link shown to discord user-agent!")
+            logger.info(f" ➤ [ D ] d. link shown to discord user-agent!")
             if request.url.endswith(".mp4") and "?" not in request.url:
-                return dl(sub_path)
+                return await dl(request, sub_path[:-4])
             else:
-                return message(
-                    "To use a direct MP4 link in discord, remove anything past '?' and put '.mp4' at the end"
+                return await message(
+                    request,
+                    "To use a direct MP4 link in discord, remove anything past '?' and put '.mp4' at the end",
                 )
         else:
-            print(f" ➤ [ R ] Redirect to MP4 using d.{base_url}")
-            return dir(sub_path)
+            logger.info(f" ➤ [ R ] Redirect to MP4 using {request.host}")
+            return await dir(request, sub_path)
 
     elif request.url.endswith(".mp4") or request.url.endswith("%2Emp4"):
         twitter_url = "https://twitter.com/" + sub_path
@@ -232,7 +99,7 @@ def twitfix(sub_path):
         else:
             clean = twitter_url
 
-        return dl(clean)
+        return await dl(request, clean)
 
     elif request.url.endswith(".json") or request.url.endswith("%2Ejson"):
         twitter_url = "https://twitter.com/" + sub_path
@@ -242,21 +109,18 @@ def twitfix(sub_path):
         else:
             clean = twitter_url
 
-        print(" ➤ [ API ] VNF Json api hit!")
+        logger.info(" ➤ [ API ] VNF Json api hit!")
 
-        vnf = link_to_vnf_from_api(clean.replace(".json", ""))
+        vnf = link_to_vnf_from_api(request, clean.replace(".json", ""))
 
         if user_agent in generate_embed_user_agents:
-            return message(
+            return await message(
+                request,
                 "VNF Data: ( discord useragent preview )\n\n"
-                + json.dumps(vnf, default=str)
+                + json.dumps(vnf, default=str),
             )
         else:
-            return Response(
-                response=json.dumps(vnf, default=str),
-                status=200,
-                mimetype="application/json",
-            )
+            return sanic.response.json(vnf)
 
     elif (
         request.url.endswith("/1")
@@ -276,7 +140,7 @@ def twitfix(sub_path):
             clean = twitter_url
 
         image = int(request.url[-1]) - 1
-        return embed_video(clean, image)
+        return await embed_video(request, clean, image)
 
     if match is not None:
         twitter_url = sub_path
@@ -285,41 +149,39 @@ def twitfix(sub_path):
             twitter_url = "https://twitter.com/" + sub_path
 
         if user_agent in generate_embed_user_agents:
-            res = embed_video(twitter_url)
-            return res
-
+            return await embed_video(request, twitter_url)
         else:
-            print(" ➤ [ R ] Redirect to " + twitter_url)
-            return redirect(twitter_url, 301)
+            logger.info(" ➤ [ R ] Redirect to " + twitter_url)
+            return sanic.response.redirect(twitter_url, status=301)
     else:
-        return message("This doesn't appear to be a twitter URL")
+        return await message(request, "This doesn't appear to be a twitter URL")
 
 
-@app.route(
-    "/other/<path:sub_path>"
+@twitfix_app.route(
+    "/other/<sub_path:path>"
 )  # Show all info that Youtube-DL can get about a video as a json
-def other(sub_path):
+async def other(request, sub_path):
     otherurl = request.url.split("/other/", 1)[1].replace(":/", "://")
-    print(" ➤ [ OTHER ]  Other URL embed attempted: " + otherurl)
-    res = embed_video(otherurl)
+    logger.info(" ➤ [ OTHER ]  Other URL embed attempted: " + otherurl)
+    res = await embed_video(request, otherurl)
     return res
 
 
-@app.route(
-    "/info/<path:sub_path>"
+@twitfix_app.route(
+    "/info/<sub_path:path>"
 )  # Show all info that Youtube-DL can get about a video as a json
-def info(sub_path):
+async def info(request, sub_path):
     infourl = request.url.split("/info/", 1)[1].replace(":/", "://")
-    print(" ➤ [ INFO ] Info data requested: " + infourl)
+    logger.info(" ➤ [ INFO ] Info data requested: " + infourl)
     with youtube_dl.YoutubeDL({"outtmpl": "%(id)s.%(ext)s"}) as ydl:
         result = ydl.extract_info(infourl, download=False)
 
     return result
 
 
-@app.route("/dl/<path:sub_path>")  # Download the tweets video, and rehost it
-def dl(sub_path):
-    print(" ➤ [[ !!! TRYING TO DOWNLOAD FILE !!! ]] Downloading file from " + sub_path)
+@twitfix_app.route("/dl/<sub_path:path>")  # Download the tweets video, and rehost it
+async def dl(request, sub_path):
+    logger.info(" ➤ [[ !!! TRYING TO DOWNLOAD FILE !!! ]] Downloading file from " + sub_path)
     url = sub_path
     match = pathregex.search(url)
     if match is not None:
@@ -327,35 +189,42 @@ def dl(sub_path):
         if match.start() == 0:
             twitter_url = "https://twitter.com/" + url
 
-    mp4link = direct_video_link(twitter_url)
+    mp4link = await direct_video_link(request, twitter_url)
+    if not isinstance(mp4link, str):
+        return mp4link
+    
+    if not mp4link:
+        return await message(request, "No video file in tweet.")
 
-    cache_hit, stored_identifier = STORAGE_MODULE.store_media(mp4link)
+    cache_hit, stored_identifier = request.app.config.STORAGE_MODULE.store_media(
+        mp4link
+    )
     if not cache_hit:
-        STAT_MODULE.add_to_stat("downloads")
-    response = STORAGE_MODULE.retrieve_media(stored_identifier)
+        request.app.config.STAT_MODULE.add_to_stat("downloads")
+    response = request.app.config.STORAGE_MODULE.retrieve_media(stored_identifier)
 
     if response is None:
-        return make_response("", 404)
+        return sanic.response.empty(status=404)
     if response["output"] == "url":
-        return redirect(response["url"])
+        logger.info("Cache response>")
+        return sanic.response.redirect(response["url"])
     if response["output"] == "file":
-        r = send_file(response["content"])
-        r.headers.update(
-            {
+        return await sanic.response.file(
+            response["content"],
+            headers={
                 "max-age": 3600,
                 "Content-Type": "video/mp4",
                 "Sec-Fetch-Site": "none",
                 "Sec-Fetch-User": "?1",
-            }
+            },
         )
-        return r
-    return make_response("", 404)
+    return sanic.response.empty(status=404)
 
 
-@app.route(
-    "/dir/<path:sub_path>"
+@twitfix_app.route(
+    "/dir/<sub_path:path>"
 )  # Try to return a direct link to the MP4 on twitters servers
-def dir(sub_path):
+async def dir(request, sub_path):
     user_agent = request.headers.get("user-agent")
     url = sub_path
     match = pathregex.search(url)
@@ -366,90 +235,91 @@ def dir(sub_path):
             twitter_url = "https://twitter.com/" + url
 
         if user_agent in generate_embed_user_agents:
-            res = embed_video(twitter_url)
+            res = await embed_video(request, twitter_url)
             return res
 
         else:
-            print(" ➤ [ R ] Redirect to direct MP4 URL")
-            return direct_video(twitter_url)
+            logger.info(" ➤ [ R ] Redirect to direct MP4 URL")
+            return await direct_video(request, twitter_url)
     else:
-        return redirect(url, 301)
+        return sanic.response.redirect(url, status=301)
 
 
-@app.route("/favicon.ico")  # This shit don't work
-def favicon():
-    return send_from_directory(
-        static_folder, "favicon.ico", mimetype="image/vnd.microsoft.icon"
-    )
+@twitfix_app.route("/favicon.ico")  # This shit don't work
+async def favicon(request):
+    return await sanic.response.file("static/favicon.ico", mime_type="image/x-icon")
 
 
-def add_link_to_cache(video_link, vnf):
-    res = LINK_CACHE.add_link_to_cache(video_link, vnf)
+def add_link_to_cache(request, video_link, vnf):
+    res = request.app.config.LINK_CACHE.add_link_to_cache(video_link, vnf)
     if res:
-        STAT_MODULE.add_to_stat("linksCached")
+        request.app.config.STAT_MODULE.add_to_stat("linksCached")
     return res
 
 
-def get_link_from_cache(video_link):
-    res = LINK_CACHE.get_link_from_cache(video_link)
+def get_link_from_cache(request, video_link):
+    res = request.app.config.LINK_CACHE.get_link_from_cache(video_link)
     if res:
-        STAT_MODULE.add_to_stat("embeds")
+        request.app.config.STAT_MODULE.add_to_stat("embeds")
     return res
 
 
-def direct_video(video_link):  # Just get a redirect to a MP4 link from any tweet link
-    cached_vnf = get_link_from_cache(video_link)
+async def direct_video(
+    request, video_link
+):  # Just get a redirect to a MP4 link from any tweet link
+    cached_vnf = get_link_from_cache(request, video_link)
     if cached_vnf is None:
         try:
-            vnf = link_to_vnf(video_link)
-            add_link_to_cache(video_link, vnf)
-            return redirect(vnf["url"], 301)
-            print(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+            vnf = link_to_vnf(request, video_link)
+            add_link_to_cache(request, video_link, vnf)
+            logger.info(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+            return sanic.response.redirect(vnf["url"], status=301)
         except TwitterUserProtected:
-            return message("This user is guarding their tweets!")
+            return await message(request, "This user is guarding their tweets!")
         except Exception as e:
-            print(e)
-            return message("Failed to scan your link!")
+            logger.info(e)
+            return await message(request, "Failed to scan your link!")
     else:
-        return redirect(cached_vnf["url"], 301)
-        print(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+        logger.info(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+        return sanic.response.redirect(cached_vnf["url"], status=301)
 
 
-def direct_video_link(
+async def direct_video_link(
+    request,
     video_link,
 ):  # Just get a redirect to a MP4 link from any tweet link
-    cached_vnf = get_link_from_cache(video_link)
+    cached_vnf = get_link_from_cache(request, video_link)
     if cached_vnf is None:
         try:
-            vnf = link_to_vnf(video_link)
-            add_link_to_cache(video_link, vnf)
+            vnf = link_to_vnf(request, video_link)
+            add_link_to_cache(request, video_link, vnf)
+            logger.info(f" ➤ [ D ] Redirecting to direct URL: {vnf['url']}")
             return vnf["url"]
-            print(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
         except TwitterUserProtected:
-            return message("This user is guarding their tweets!")
+            return await message(request, "This user is guarding their tweets!")
         except Exception as e:
-            print(e)
-            return message("Failed to scan your link!")
+            logger.info(e)
+            return await message(request, "Failed to scan your link!")
     else:
+        logger.info(f" ➤ [ D ] Redirecting to direct URL: {cached_vnf['url']}")
         return cached_vnf["url"]
-        print(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
 
 
-def embed_video(video_link, image=0):  # Return Embed from any tweet link
-    cached_vnf = get_link_from_cache(video_link)
+async def embed_video(request, video_link, image=0):  # Return Embed from any tweet link
+    cached_vnf = get_link_from_cache(request, video_link)
 
     if cached_vnf is None:
         try:
-            vnf = link_to_vnf(video_link)
-            add_link_to_cache(video_link, vnf)
-            return embed(video_link, vnf, image)
+            vnf = link_to_vnf(request, video_link)
+            add_link_to_cache(request, video_link, vnf)
+            return await embed(request, video_link, vnf, image)
         except TwitterUserProtected:
-            return message("This user is guarding their tweets!")
+            return await message(request, "This user is guarding their tweets!")
         except Exception as e:
-            print(e)
-            return message("Failed to scan your link!")
+            logger.info(e)
+            return await message(request, "Failed to scan your link!")
     else:
-        return embed(video_link, cached_vnf, image)
+        return await embed(request, video_link, cached_vnf, image)
 
 
 def tweetInfo(
@@ -489,15 +359,15 @@ def tweetInfo(
     return vnf
 
 
-def link_to_vnf_from_api(video_link):
-    print(" ➤ [ + ] Attempting to download tweet info from Twitter API")
+def link_to_vnf_from_api(request, video_link):
+    logger.info(" ➤ [ + ] Attempting to download tweet info from Twitter API")
     twid = int(
         re.sub(r"\?.*$", "", video_link.rsplit("/", 1)[-1])
     )  # gets the tweet ID as a int from the passed url
-    tweet = twitter_api.statuses.show(_id=twid, tweet_mode="extended")
+    tweet = request.app.config.TWITTER.statuses.show(_id=twid, tweet_mode="extended")
     # For when I need to poke around and see what a tweet looks like
-    # print(tweet)
-    protected = tweet['user']['protected']
+    # logger.info(tweet)
+    protected = tweet["user"]["protected"]
     if protected:
         raise TwitterUserProtected()
 
@@ -507,7 +377,7 @@ def link_to_vnf_from_api(video_link):
     url = ""
     thumb = ""
     imgs = ["", "", "", "", ""]
-    print(" ➤ [ + ] Tweet Type: " + tweetType(tweet))
+    logger.info(" ➤ [ + ] Tweet Type: " + tweetType(tweet))
     # Check to see if tweet has a video, if not, make the url passed to the VNF the first t.co link in the tweet
     if tweetType(tweet) == "Video":
         if tweet["extended_entities"]["media"][0]["video_info"]["variants"]:
@@ -521,7 +391,7 @@ def link_to_vnf_from_api(video_link):
                     and video["bitrate"] > best_bitrate
                 ):
                     url = video["url"]
-                    best_bitrate = video['bitrate']
+                    best_bitrate = video["bitrate"]
     elif tweetType(tweet) == "Text":
         pass
     else:
@@ -531,7 +401,7 @@ def link_to_vnf_from_api(video_link):
             imgs[i] = media["media_url_https"]
             i = i + 1
 
-        # print(imgs)
+        # logger.info(imgs)
         imgs[4] = str(i)
         thumb = tweet["extended_entities"]["media"][0]["media_url_https"]
 
@@ -561,7 +431,7 @@ def link_to_vnf_from_api(video_link):
 
 
 def link_to_vnf_from_youtubedl(video_link):
-    print(" ➤ [ X ] Attempting to download tweet info via YoutubeDL: " + video_link)
+    logger.info(" ➤ [ X ] Attempting to download tweet info via YoutubeDL: " + video_link)
     with youtube_dl.YoutubeDL({"outtmpl": "%(id)s.%(ext)s"}) as ydl:
         result = ydl.extract_info(video_link, download=False)
         vnf = tweetInfo(
@@ -574,54 +444,53 @@ def link_to_vnf_from_youtubedl(video_link):
         return vnf
 
 
-def link_to_vnf(video_link):  # Return a VideoInfo object or die trying
-    if config["config"]["method"] == "hybrid":
+def link_to_vnf(request, video_link):  # Return a VideoInfo object or die trying
+    config_method = request.app.config.CONFIG["config"]["method"]
+    if config_method == "hybrid":
         try:
-            return link_to_vnf_from_api(video_link)
+            return link_to_vnf_from_api(request, video_link)
         except TwitterUserProtected:
-            print(" ➤ [ X ] User is protected, stop.")
+            logger.info(" ➤ [ X ] User is protected, stop.")
             raise
         except Exception as e:
-            print(" ➤ [ !!! ] API Failed")
-            print(e)
+            logger.error(f" ➤ [ !!! ] API Failed {e}")
             return link_to_vnf_from_youtubedl(video_link)
-    elif config["config"]["method"] == "api":
+    elif config_method == "api":
         try:
-            return link_to_vnf_from_api(video_link)
+            return link_to_vnf_from_api(request, video_link)
         except TwitterUserProtected:
-            print(" ➤ [ X ] User is protected, stop.")
+            logger.info(" ➤ [ X ] User is protected, stop.")
             raise
         except Exception as e:
-            print(" ➤ [ X ] API Failed")
-            print(e)
+            logger.error(f" ➤ [ X ] API Failed {e}")
             return None
-    elif config["config"]["method"] == "youtube-dl":
+    elif config_method == "youtube-dl":
         try:
             return link_to_vnf_from_youtubedl(video_link)
         except Exception as e:
-            print(" ➤ [ X ] Youtube-DL Failed")
-            print(e)
+            logger.error(f" ➤ [ X ] Youtube-DL Failed {e}")
             return None
     else:
-        print(
+        logger.info(
             "Please set the method key in your config file to 'api' 'youtube-dl' or 'hybrid'"
         )
         return None
 
 
-def message(text):
-    return render_template(
+async def message(request, text):
+    return await render_template(
+        request,
         "default.html",
         message=text,
-        color=config["config"]["color"],
-        appname=config["config"]["appname"],
-        repo=config["config"]["repo"],
-        url=config["config"]["url"],
+        color=request.app.config.CONFIG["config"]["color"],
+        appname=request.app.config.CONFIG["config"]["appname"],
+        repo=request.app.config.CONFIG["config"]["repo"],
+        url=request.app.config.CONFIG["config"]["url"],
     )
 
 
-def embed(video_link, vnf, image):
-    print(" ➤ [ E ] Embedding " + vnf["type"] + ": " + vnf["url"])
+async def embed(request, video_link, vnf, image):
+    logger.info(f" ➤ [ E ] Embedding {vnf['type']}: {vnf['url'] or (video_link, image)}")
 
     desc = re.sub(r" http.*t\.co\S+", "", vnf["description"])
     urlUser = urllib.parse.quote(vnf["uploader"])
@@ -651,7 +520,7 @@ def embed(video_link, vnf, image):
         vnf["likes"] = 0
         vnf["rts"] = 0
         vnf["time"] = 0
-        print(" ➤ [ X ] Failed QRT check - old VNF object")
+        logger.info(" ➤ [ X ] Failed QRT check - old VNF object")
 
     if vnf["type"] == "Text":  # Change the template based on tweet type
         template = "text.html"
@@ -672,7 +541,8 @@ def embed(video_link, vnf, image):
     # Change the theme color to red if this post is not worksafe.
     color = "#800020" if vnf["nsfw"] else "#7FFFD4"
 
-    return render_template(
+    return await render_template(
+        request,
         template,
         likes=vnf["likes"],
         rts=vnf["rts"],
@@ -686,9 +556,9 @@ def embed(video_link, vnf, image):
         user=vnf["uploader"],
         video_link=video_link,
         color=color,
-        appname=config["config"]["appname"],
-        repo=config["config"]["repo"],
-        url=config["config"]["url"],
+        appname=request.app.config.CONFIG["config"]["appname"],
+        repo=request.app.config.CONFIG["config"]["repo"],
+        url=request.app.config.CONFIG["config"]["url"],
         urlDesc=urlDesc,
         urlUser=urlUser,
         urlLink=urlLink,
@@ -707,12 +577,12 @@ def tweetType(tweet):  # Are we dealing with a Video, Image, or Text tweet?
     return out
 
 
-def oEmbedGen(description, user, video_link, ttype):
+def oEmbedGen(request, description, user, video_link, ttype):
     out = {
         "type": ttype,
         "version": "1.0",
-        "provider_name": config["config"]["appname"],
-        "provider_url": config["config"]["repo"],
+        "provider_name": request.app.config.CONFIG["config"]["appname"],
+        "provider_url": request.app.config.CONFIG["config"]["repo"],
         "title": description,
         "author_name": user,
         "author_url": video_link,
@@ -722,5 +592,5 @@ def oEmbedGen(description, user, video_link, ttype):
 
 
 if __name__ == "__main__":
-    app.config["SERVER_NAME"] = "localhost:80"
-    app.run(host="0.0.0.0")
+    twitfix_app.config["SERVER_NAME"] = "localhost:80"
+    twitfix_app.run(host="0.0.0.0")
