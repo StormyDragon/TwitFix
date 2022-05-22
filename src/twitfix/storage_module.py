@@ -2,18 +2,17 @@ import os
 import pathlib
 import shutil
 import urllib.request
+from contextlib import suppress
 from datetime import timedelta
 from typing import Tuple
 from uuid import UUID, uuid5
 
 import requests
 
-try:
+with suppress(ImportError):
     import google.auth
     import google.auth.compute_engine
     import google.cloud.storage
-except:
-    pass
 
 
 class StorageBase:
@@ -81,7 +80,9 @@ class GoogleCloudStorage(StorageBase):
         auth_session = requests.Session()
         credentials, project = google.auth.default()
         self.signing_credentials = google.auth.compute_engine.IDTokenCredentials(
-            auth_session.request, "", service_account_email=credentials.service_account_email
+            auth_session.request,
+            "",
+            service_account_email=credentials.service_account_email,
         )
 
     def store_media(self, url: str) -> Tuple[bool, str]:

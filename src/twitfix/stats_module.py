@@ -1,15 +1,12 @@
+from contextlib import suppress
 from datetime import date
 from typing import Any
 
-try:
+with suppress(ImportError):
     import pymongo
-except:
-    pass
 
-try:
+with suppress(ImportError):
     import google.cloud.firestore
-except:
-    pass
 
 
 class StatsBase:

@@ -1,17 +1,14 @@
 import json
+from contextlib import suppress
 from itertools import islice
 from typing import Any, List, Optional
 from uuid import UUID, uuid5
 
-try:
+with suppress(ImportError):
     import pymongo
-except:
-    pass
 
-try:
+with suppress(ImportError):
     import google.cloud.firestore
-except:
-    pass
 
 
 class LinkCacheBase:
