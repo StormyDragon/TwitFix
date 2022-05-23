@@ -4,7 +4,6 @@ import sanic
 import sanic.response
 import twitter
 from sanic.log import logger
-from sanic_cors import CORS, cross_origin
 
 from .config import load_json_config
 from .link_cache import initialize_link_cache
@@ -23,10 +22,11 @@ async def lock_stats(request):
 
 
 app = sanic.Sanic("twitfix", env_prefix="TWITFIX_")
-CORS(app)
 app.blueprint(twitfix_app)
 app.blueprint(stats)
 app.blueprint(toy)
+
+app.extend(cors=True, oas=False)
 
 
 @app.middleware
