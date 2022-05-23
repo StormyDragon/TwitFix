@@ -59,12 +59,22 @@ async def default(request):
 
 
 @twitfix_app.route("/oembed.json")  # oEmbed endpoint
-def oembedend(request):
+async def oembedend(request):
     desc = request.args.get("desc", None)
     user = request.args.get("user", None)
     link = request.args.get("link", None)
     ttype = request.args.get("ttype", None)
-    return oEmbedGen(desc, user, link, ttype)
+    return sanic.response.json(
+        {
+            "type": ttype,
+            "version": "1.0",
+            "provider_name": request.app.config.APP_NAME,
+            "provider_url": request.app.config.REPO,
+            "title": desc,
+            "author_name": user,
+            "author_url": link,
+        }
+    )
 
 
 @twitfix_app.route("/<sub_path:path>")  # Default endpoint used by everything
@@ -577,19 +587,5 @@ def tweetType(tweet):  # Are we dealing with a Video, Image, or Text tweet?
             out = "Image"
     else:
         out = "Text"
-
-    return out
-
-
-def oEmbedGen(request, description, user, video_link, ttype):
-    out = {
-        "type": ttype,
-        "version": "1.0",
-        "provider_name": request.app.config.APP_NAME,
-        "provider_url": request.app.config.REPO,
-        "title": description,
-        "author_name": user,
-        "author_url": video_link,
-    }
 
     return out
