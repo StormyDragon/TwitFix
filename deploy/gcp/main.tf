@@ -39,7 +39,7 @@ resource "google_project_iam_member" "firestore_permission" {
   project = var.google_cloud_project
   role    = "roles/datastore.user"
 
-  member  = "serviceAccount:${google_service_account.twitfix.email}"
+  member = "serviceAccount:${google_service_account.twitfix.email}"
 }
 
 resource "google_project_iam_member" "token_signer_permission" {
@@ -71,8 +71,8 @@ locals {
     "TWITFIX_STORAGE_MODULE"        = "gcp_storage"
     "TWITFIX_STORAGE_BUCKET"        = google_storage_bucket.media_store.name
     "TWITFIX_LINK_CACHE"            = "firestore"
-    "TWITFIX_DB"                    = "[keep-in-secret-file]"
-    "TWITFIX_DB_TABLE"              = "[keep-in-secret-file]"
+    "TWITFIX_MONGO_DB"              = "[keep-in-secret-file]"
+    "TWITFIX_MONGO_DB_TABLE"        = "[keep-in-secret-file]"
     "TWITFIX_DOWNLOAD_METHOD"       = "youtube-dl"
     "TWITFIX_COLOR"                 = "#43B581"
     "TWITFIX_APP_NAME"              = "TwitFix"

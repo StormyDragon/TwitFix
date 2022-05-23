@@ -13,8 +13,8 @@ services:
     environment:
       TWITFIX_CONFIG_FROM: environment
       TWITFIX_LINK_CACHE: db
-      TWITFIX_DB: mongodb://mongo:dra8onrulz@mongo:27017/
-      TWITFIX_DB_TABLE: TwiFix
+      TWITFIX_MONGO_DB: mongodb://mongo:dra8onrulz@mongo:27017/
+      TWITFIX_MONGO_DB_TABLE: TwiFix
       TWITFIX_DOWNLOAD_METHOD: youtube-dl
       TWITFIX_COLOR: "#43B581"
       TWITFIX_APP_NAME: TwitFix
