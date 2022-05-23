@@ -37,8 +37,8 @@ class StorageBase:
 class LocalFilesystem(StorageBase):
     def __init__(self, config) -> None:
         super().__init__(config)
-        self.base_url = config["config"]["url"]
-        self.basepath = pathlib.Path(config["config"]["download_base"])
+        self.base_url = config.BASE_URL
+        self.basepath = pathlib.Path(config.STORAGE_LOCAL_BASE)
 
     def store_media(self, url: str):
         filename = url.rsplit("/", 1)[-1].split(".mp4")[0] + ".mp4"
@@ -75,7 +75,7 @@ class GoogleCloudStorage(StorageBase):
     STORAGE_NAMESPACE = UUID("dbc14e27-a6ed-4343-98ef-285aa17cacfd")
 
     def __init__(self, config) -> None:
-        bucket = config["config"]["gcp_bucket"]
+        bucket = config.STORAGE_BUCKET
         self.client = google.cloud.storage.Client()
         self.bucket = self.client.get_bucket(bucket)
         auth_session = requests.Session()

@@ -55,9 +55,7 @@ async def default(request):
         )
     else:
         logger.info("Just redirecting to github")
-        return sanic.response.redirect(
-            request.app.config.CONFIG["config"]["repo"], status=301
-        )
+        return sanic.response.redirect(request.app.config.REPO, status=301)
 
 
 @twitfix_app.route("/oembed.json")  # oEmbed endpoint
@@ -253,14 +251,14 @@ async def favicon(request):
 
 
 def add_link_to_cache(request, video_link, vnf):
-    res = request.app.config.LINK_CACHE.add_link_to_cache(video_link, vnf)
+    res = request.app.config.LINKS_MODULE.add_link_to_cache(video_link, vnf)
     if res:
         request.app.config.STAT_MODULE.add_to_stat("linksCached")
     return res
 
 
 def get_link_from_cache(request, video_link):
-    res = request.app.config.LINK_CACHE.get_link_from_cache(video_link)
+    res = request.app.config.LINKS_MODULE.get_link_from_cache(video_link)
     if res:
         request.app.config.STAT_MODULE.add_to_stat("embeds")
     return res
@@ -449,7 +447,7 @@ def link_to_vnf_from_youtubedl(video_link):
 
 
 def link_to_vnf(request, video_link):  # Return a VideoInfo object or die trying
-    config_method = request.app.config.CONFIG["config"]["method"]
+    config_method = request.app.config.DOWNLOAD_METHOD
     if config_method == "hybrid":
         try:
             return link_to_vnf_from_api(request, video_link)
@@ -486,10 +484,10 @@ async def message(request, text):
         request,
         "default.html",
         message=text,
-        color=request.app.config.CONFIG["config"]["color"],
-        appname=request.app.config.CONFIG["config"]["appname"],
-        repo=request.app.config.CONFIG["config"]["repo"],
-        url=request.app.config.CONFIG["config"]["url"],
+        color=request.app.config.COLOR,
+        appname=request.app.config.APP_NAME,
+        repo=request.app.config.REPO,
+        url=request.app.config.BASE_URL,
     )
 
 
@@ -562,9 +560,9 @@ async def embed(request, video_link, vnf, image):
         user=vnf["uploader"],
         video_link=video_link,
         color=color,
-        appname=request.app.config.CONFIG["config"]["appname"],
-        repo=request.app.config.CONFIG["config"]["repo"],
-        url=request.app.config.CONFIG["config"]["url"],
+        appname=request.app.config.APP_NAME,
+        repo=request.app.config.REPO,
+        url=request.app.config.BASE_URL,
         urlDesc=urlDesc,
         urlUser=urlUser,
         urlLink=urlLink,
@@ -587,8 +585,8 @@ def oEmbedGen(request, description, user, video_link, ttype):
     out = {
         "type": ttype,
         "version": "1.0",
-        "provider_name": request.app.config.CONFIG["config"]["appname"],
-        "provider_url": request.app.config.CONFIG["config"]["repo"],
+        "provider_name": request.app.config.APP_NAME,
+        "provider_url": request.app.config.REPO,
         "title": description,
         "author_name": user,
         "author_url": video_link,

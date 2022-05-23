@@ -33,7 +33,7 @@ async def latest(request):
 @stats.route("/top/")  # Try to return the most hit video
 async def top(request):
     try:
-        [vnf] = request.app.config.LINK_CACHE.get_links_from_cache("hits", 1, 0)
+        [vnf] = request.app.config.LINKS_MODULE.get_links_from_cache("hits", 1, 0)
     except ValueError:
         logger.info(" ➤ [ ✔ ] Top video page loaded: None yet...")
         return sanic.response.empty()
@@ -51,10 +51,10 @@ async def top(request):
         pic=vnf["thumbnail"],
         user=vnf["uploader"],
         video_link=vnf["url"],
-        color=request.app.config.config["config"]["color"],
-        appname=request.app.config.config["config"]["appname"],
-        repo=request.app.config.config["config"]["repo"],
-        url=request.app.config.config["config"]["url"],
+        color=request.app.config.COLOR,
+        appname=request.app.config.APP_NAME,
+        repo=request.app.config.REPO,
+        url=request.app.config.BASE_URL,
         urlDesc=urlDesc,
         urlUser=urlUser,
         urlLink=urlLink,
@@ -70,7 +70,7 @@ async def apiLatest(request):
     if tweets > 15:
         tweets = 1
 
-    vnf = request.app.config.LINK_CACHE.get_links_from_cache("_id", tweets, tweets * page)
+    vnf = request.app.config.LINKS_MODULE.get_links_from_cache("_id", tweets, tweets * page)
 
     logger.info(" ➤ [ ✔ ] Latest video API called")
     request.app.config.STAT_MODULE.add_to_stat("api")
@@ -85,7 +85,7 @@ async def apiTop(request):
     if tweets > 15:
         tweets = 1
 
-    vnf = request.app.config.LINK_CACHE.get_links_from_cache("hits", tweets, tweets * page)
+    vnf = request.app.config.LINKS_MODULE.get_links_from_cache("hits", tweets, tweets * page)
 
     logger.info(" ➤ [ ✔ ] Top video API called")
     request.app.config.STAT_MODULE.add_to_stat("api")

@@ -6,7 +6,7 @@ import twitter
 from sanic.log import logger
 from sanic_cors import CORS, cross_origin
 
-from .config import load_configuration, load_json_config
+from .config import load_json_config
 from .link_cache import initialize_link_cache
 from .sanic_jinja import configure_jinja
 from .stats_module import initialize_stats
@@ -34,27 +34,24 @@ async def peek(request):
     logger.info(f">>> {request.url}")
 
 
-# Read config from config.json. If it does not exist, create new.
-config = load_configuration()
-
 # If method is set to API or Hybrid, attempt to auth with the Twitter API
-if config["config"]["method"] in ("api", "hybrid"):
+if app.config.DOWNLOAD_METHOD in ("api", "hybrid"):
     auth = twitter.oauth.OAuth(
-        config["api"]["access_token"],
-        config["api"]["access_secret"],
-        config["api"]["api_key"],
-        config["api"]["api_secret"],
+        app.config.TWITTER_ACCESS_TOKEN,
+        app.config.TWITTER_ACCESS_SECRET,
+        app.config.TWITTER_API_KEY,
+        app.config.TWITTER_API_SECRET,
     )
     twitter_api = twitter.Twitter(auth=auth)
     app.config.update({"TWITTER": twitter_api})
 
-link_cache_system = config["config"]["link_cache"]
-storage_module_type = config["config"]["storage_module"]
-STAT_MODULE = initialize_stats(link_cache_system, config)
-LINK_CACHE = initialize_link_cache(link_cache_system, config)
-STORAGE_MODULE = initialize_storage(storage_module_type, config)
+link_cache_system = app.config.LINK_CACHE
+storage_module_type = app.config.STORAGE_MODULE
+STAT_MODULE = initialize_stats(link_cache_system, app.config)
+LINKS_MODULE = initialize_link_cache(link_cache_system, app.config)
+STORAGE_MODULE = initialize_storage(storage_module_type, app.config)
 
-base_url = config["config"]["url"]
+base_url = app.config.BASE_URL
 
 static_folder = Path("static").resolve()
 template_folder = Path("templates").resolve()
@@ -64,9 +61,8 @@ app.static("/static", static_folder)
 app.config.update(
     {
         "STAT_MODULE": STAT_MODULE,
-        "LINK_CACHE": LINK_CACHE,
+        "LINKS_MODULE": LINKS_MODULE,
         "STORAGE_MODULE": STORAGE_MODULE,
-        "CONFIG": config,
         "BASE_URL": base_url,
     }
 )

@@ -24,8 +24,8 @@ class StatsBase:
 
 class MongoStats(StatsBase):
     def __init__(self, config) -> None:
-        self.client = pymongo.MongoClient(config["config"]["database"], connect=False)
-        table = config["config"]["table"]
+        self.client = pymongo.MongoClient(config.MONGO_DB, connect=False)
+        table = config.MONGO_DB_TABLE
         self.db = self.client[table]
 
     def add_to_stat(self, metric: str):
