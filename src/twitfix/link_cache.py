@@ -1,9 +1,10 @@
 import json
-from sanic.log import logger
 from contextlib import suppress
 from itertools import islice
 from typing import Any, List, Optional
 from uuid import UUID, uuid5
+
+from sanic.log import logger
 
 with suppress(ImportError):
     import pymongo

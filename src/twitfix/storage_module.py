@@ -1,4 +1,3 @@
-from sanic.log import logger
 import os
 import pathlib
 import shutil
@@ -7,6 +6,8 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Tuple
 from uuid import UUID, uuid5
+
+from sanic.log import logger
 
 with suppress(ImportError):
     import google.auth

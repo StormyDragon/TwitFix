@@ -2,6 +2,7 @@ import json
 import os
 from pathlib import Path
 
+from sanic.log import logger
 
 def _env(suffix: str, optional=False):
     key = f"TWITFIX_{suffix}"

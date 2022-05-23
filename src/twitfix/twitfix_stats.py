@@ -1,10 +1,10 @@
-from sanic.log import logger
 import re
 import urllib
 from datetime import date
 
 import sanic
 import sanic.response
+from sanic.log import logger
 
 from .sanic_jinja import render_template
 

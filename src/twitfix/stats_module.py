@@ -1,7 +1,8 @@
-from sanic.log import logger
 from contextlib import suppress
 from datetime import date
 from typing import Any
+
+from sanic.log import logger
 
 with suppress(ImportError):
     import pymongo

@@ -1,9 +1,9 @@
-from sanic.log import logger
 from pathlib import Path
 
 import sanic
 import sanic.response
 import twitter
+from sanic.log import logger
 from sanic_cors import CORS, cross_origin
 
 from .config import load_configuration, load_json_config

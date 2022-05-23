@@ -181,7 +181,9 @@ async def info(request, sub_path):
 
 @twitfix_app.route("/dl/<sub_path:path>")  # Download the tweets video, and rehost it
 async def dl(request, sub_path):
-    logger.info(" ➤ [[ !!! TRYING TO DOWNLOAD FILE !!! ]] Downloading file from " + sub_path)
+    logger.info(
+        f" ➤ [[ !!! TRYING TO DOWNLOAD FILE !!! ]] Downloading file from {sub_path}"
+    )
     url = sub_path
     match = pathregex.search(url)
     if match is not None:
@@ -192,7 +194,7 @@ async def dl(request, sub_path):
     mp4link = await direct_video_link(request, twitter_url)
     if not isinstance(mp4link, str):
         return mp4link
-    
+
     if not mp4link:
         return await message(request, "No video file in tweet.")
 
@@ -431,7 +433,9 @@ def link_to_vnf_from_api(request, video_link):
 
 
 def link_to_vnf_from_youtubedl(video_link):
-    logger.info(" ➤ [ X ] Attempting to download tweet info via YoutubeDL: " + video_link)
+    logger.info(
+        f" ➤ [ X ] Attempting to download tweet info via YoutubeDL: {video_link}"
+    )
     with youtube_dl.YoutubeDL({"outtmpl": "%(id)s.%(ext)s"}) as ydl:
         result = ydl.extract_info(video_link, download=False)
         vnf = tweetInfo(
@@ -490,7 +494,9 @@ async def message(request, text):
 
 
 async def embed(request, video_link, vnf, image):
-    logger.info(f" ➤ [ E ] Embedding {vnf['type']}: {vnf['url'] or (video_link, image)}")
+    logger.info(
+        f" ➤ [ E ] Embedding {vnf['type']}: {vnf['url'] or (video_link, image)}"
+    )
 
     desc = re.sub(r" http.*t\.co\S+", "", vnf["description"])
     urlUser = urllib.parse.quote(vnf["uploader"])
@@ -589,8 +595,3 @@ def oEmbedGen(request, description, user, video_link, ttype):
     }
 
     return out
-
-
-if __name__ == "__main__":
-    twitfix_app.config["SERVER_NAME"] = "localhost:80"
-    twitfix_app.run(host="0.0.0.0")
