@@ -99,7 +99,7 @@ async def twitfix(request, sub_path):
             logger.info(f" ➤ [ R ] Redirect to MP4 using {request.host}")
             return await dir(request, sub_path)
 
-    elif request.url.endswith(".mp4") or request.url.endswith("%2Emp4"):
+    elif request.url.endswith((".mp4","%2Emp4")):
         twitter_url = "https://twitter.com/" + sub_path
 
         if "?" not in request.url:
@@ -109,7 +109,7 @@ async def twitfix(request, sub_path):
 
         return await dl(request, clean)
 
-    elif request.url.endswith(".json") or request.url.endswith("%2Ejson"):
+    elif request.url.endswith((".json","%2Ejson")):
         twitter_url = "https://twitter.com/" + sub_path
 
         if "?" not in request.url:
@@ -130,16 +130,7 @@ async def twitfix(request, sub_path):
         else:
             return sanic.response.json(vnf)
 
-    elif (
-        request.url.endswith("/1")
-        or request.url.endswith("/2")
-        or request.url.endswith("/3")
-        or request.url.endswith("/4")
-        or request.url.endswith("%2F1")
-        or request.url.endswith("%2F2")
-        or request.url.endswith("%2F3")
-        or request.url.endswith("%2F4")
-    ):
+    elif request.url.endswith(("/1","/2","/3","/4","%2F1","%2F2","%2F3","%2F4")):
         twitter_url = "https://twitter.com/" + sub_path
 
         if "?" not in request.url:
