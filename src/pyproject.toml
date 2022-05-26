@@ -24,7 +24,8 @@ pymongo = { version = "^4.0.2", optional=true }
 uWSGI = { version = "^2.0.20", optional=true }
 
 # GCP Deployment optionals
-google-cloud-firestore = { version = "^2.4.0", optional = true }
+protobuf = { version = "3.20.1", optional = true } # Protocol buffers 4 breaks firestore
+google-cloud-firestore = { version = "^2.5.0", optional = true }
 google-cloud-storage = { version = "^2.2.1", optional = true }
 
 [tool.poetry.dev-dependencies]
@@ -37,4 +38,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.extras]
 deploy-here = ["pymongo", "uWSGI"]
 deploy-compose = ["pymongo"]
-deploy-gcp = ["google-cloud-firestore", "google-cloud-storage"]
+deploy-gcp = ["google-cloud-firestore", "google-cloud-storage", "protobuf"]

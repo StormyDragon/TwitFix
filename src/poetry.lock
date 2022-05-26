@@ -537,13 +537,13 @@ python-versions = "*"
 
 [extras]
 deploy-compose = ["pymongo"]
-deploy-gcp = ["google-cloud-firestore", "google-cloud-storage"]
+deploy-gcp = ["google-cloud-firestore", "google-cloud-storage", "protobuf"]
 deploy-here = ["pymongo", "uWSGI"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "4fdbc58a583e9ebc51822bec25751521256fad28e2614b0a7c4997692f49ac87"
+content-hash = "b627eabc03bef7183fb93b00504b2387e5ef07b3d89eb6d4a1a5e01fd15541d2"
 
 [metadata.files]
 aiofiles = [
