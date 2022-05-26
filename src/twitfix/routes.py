@@ -4,6 +4,8 @@ import sanic
 import sanic.response
 import twitter
 from sanic.log import logger
+from sanic_ext.extensions.http.extension import HTTPExtension
+from sanic_ext.extensions.openapi.extension import OpenAPIExtension
 
 from .config import load_json_config
 from .link_cache import initialize_link_cache
@@ -26,13 +28,7 @@ app.blueprint(twitfix_app)
 app.blueprint(stats)
 app.blueprint(toy)
 
-app.extend(cors=True, oas=False)
-
-
-@app.middleware
-async def peek(request):
-    logger.info(f">>> {request.url}")
-
+app.extend(built_in_extensions=False, extensions=[HTTPExtension, OpenAPIExtension])
 
 # If method is set to API or Hybrid, attempt to auth with the Twitter API
 if app.config.DOWNLOAD_METHOD in ("api", "hybrid"):
