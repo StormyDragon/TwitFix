@@ -281,7 +281,7 @@ async def direct_video(
             logger.info(e)
             return await message(request, "Failed to scan your link!")
     else:
-        logger.info(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
+        logger.info(f" ➤ [ D ] Redirecting to direct URL: {cached_vnf['url']}")
         return sanic.response.redirect(cached_vnf["url"], status=301)
 
 
