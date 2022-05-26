@@ -1,6 +1,8 @@
 {
     "python.formatting.provider": "black",
     "python.defaultInterpreterPath": "src/.venv/bin/python",
+    "python.poetryPath": "poetry",
+    "python.analysis.diagnosticMode": "workspace",
     "editor.codeActionsOnSave": {
         "source.organizeImports": true
     }
