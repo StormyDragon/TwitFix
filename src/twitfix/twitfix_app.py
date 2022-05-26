@@ -197,12 +197,12 @@ async def dl(request, sub_path):
     if not mp4link:
         return await message(request, "No video file in tweet.")
 
-    cache_hit, stored_identifier = request.app.config.STORAGE_MODULE.store_media(
+    cache_hit, stored_identifier = await request.app.config.STORAGE_MODULE.store_media(
         mp4link
     )
     if not cache_hit:
-        request.app.config.STAT_MODULE.add_to_stat("downloads")
-    response = request.app.config.STORAGE_MODULE.retrieve_media(stored_identifier)
+        await request.app.config.STAT_MODULE.add_to_stat("downloads")
+    response = await request.app.config.STORAGE_MODULE.retrieve_media(stored_identifier)
 
     if response is None:
         return sanic.response.empty(status=404)
@@ -251,28 +251,28 @@ async def favicon(request):
     return await sanic.response.file("static/favicon.ico", mime_type="image/x-icon")
 
 
-def add_link_to_cache(request, video_link, vnf):
-    res = request.app.config.LINKS_MODULE.add_link_to_cache(video_link, vnf)
+async def add_link_to_cache(request, video_link, vnf):
+    res = await request.app.config.LINKS_MODULE.add_link_to_cache(video_link, vnf)
     if res:
-        request.app.config.STAT_MODULE.add_to_stat("linksCached")
+        await request.app.config.STAT_MODULE.add_to_stat("linksCached")
     return res
 
 
-def get_link_from_cache(request, video_link):
-    res = request.app.config.LINKS_MODULE.get_link_from_cache(video_link)
+async def get_link_from_cache(request, video_link):
+    res = await request.app.config.LINKS_MODULE.get_link_from_cache(video_link)
     if res:
-        request.app.config.STAT_MODULE.add_to_stat("embeds")
+        await request.app.config.STAT_MODULE.add_to_stat("embeds")
     return res
 
 
 async def direct_video(
     request, video_link
 ):  # Just get a redirect to a MP4 link from any tweet link
-    cached_vnf = get_link_from_cache(request, video_link)
+    cached_vnf = await get_link_from_cache(request, video_link)
     if cached_vnf is None:
         try:
             vnf = link_to_vnf(request, video_link)
-            add_link_to_cache(request, video_link, vnf)
+            await add_link_to_cache(request, video_link, vnf)
             logger.info(" ➤ [ D ] Redirecting to direct URL: " + vnf["url"])
             return sanic.response.redirect(vnf["url"], status=301)
         except TwitterUserProtected:
@@ -289,11 +289,11 @@ async def direct_video_link(
     request,
     video_link,
 ):  # Just get a redirect to a MP4 link from any tweet link
-    cached_vnf = get_link_from_cache(request, video_link)
+    cached_vnf = await get_link_from_cache(request, video_link)
     if cached_vnf is None:
         try:
             vnf = link_to_vnf(request, video_link)
-            add_link_to_cache(request, video_link, vnf)
+            await add_link_to_cache(request, video_link, vnf)
             logger.info(f" ➤ [ D ] Redirecting to direct URL: {vnf['url']}")
             return vnf["url"]
         except TwitterUserProtected:
@@ -307,12 +307,12 @@ async def direct_video_link(
 
 
 async def embed_video(request, video_link, image=0):  # Return Embed from any tweet link
-    cached_vnf = get_link_from_cache(request, video_link)
+    cached_vnf = await get_link_from_cache(request, video_link)
 
     if cached_vnf is None:
         try:
             vnf = link_to_vnf(request, video_link)
-            add_link_to_cache(request, video_link, vnf)
+            await add_link_to_cache(request, video_link, vnf)
             return await embed(request, video_link, vnf, image)
         except TwitterUserProtected:
             return await message(request, "This user is guarding their tweets!")

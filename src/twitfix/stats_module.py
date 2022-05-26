@@ -15,10 +15,10 @@ class StatsBase:
     def __init__(self, config) -> None:
         pass
 
-    def add_to_stat(self, metric: str) -> None:
+    async def add_to_stat(self, metric: str) -> None:
         pass
 
-    def get_stats(self, day: str) -> Any:
+    async def get_stats(self, day: str) -> Any:
         pass
 
 
@@ -28,7 +28,7 @@ class MongoStats(StatsBase):
         table = config.MONGO_DB_TABLE
         self.db = self.client[table]
 
-    def add_to_stat(self, metric: str):
+    async def add_to_stat(self, metric: str):
         today = str(date.today())
         try:
             collection = self.db.stats.find_one({"date": today})
@@ -40,17 +40,17 @@ class MongoStats(StatsBase):
                 {"date": today, "embeds": 1, "linksCached": 1, "api": 1, "downloads": 1}
             )
 
-    def get_stats(self, day: str):
+    async def get_stats(self, day: str):
         collection = self.db.stats.find_one({"date": day})
         return collection
 
 
 class FirestoreStats(StatsBase):
     def __init__(self, config) -> None:
-        self.fire = google.cloud.firestore.Client()
+        self.fire = google.cloud.firestore.AsyncClient()
         self.stats = self.fire.collection("statistics")
 
-    def add_to_stat(self, metric: str):
+    async def add_to_stat(self, metric: str):
         today = str(date.today())
         update = {
             "date": today,
@@ -60,10 +60,10 @@ class FirestoreStats(StatsBase):
             "downloads": google.cloud.firestore.Increment(0),
         }
         update[metric] = google.cloud.firestore.Increment(1)
-        self.stats.document(today).set(update, merge=True)
+        await self.stats.document(today).set(update, merge=True)
 
-    def get_stats(self, day: str):
-        doc = self.stats.document(day).get()
+    async def get_stats(self, day: str):
+        doc = await self.stats.document(day).get()
         return {
             "date": day,
             "embeds": 0,
@@ -78,10 +78,10 @@ class NoStats(StatsBase):
     def __init__(self, config) -> None:
         pass
 
-    def add_to_stat(self, metric: str):
+    async def add_to_stat(self, metric: str):
         pass
 
-    def get_stats(self, day: str):
+    async def get_stats(self, day: str):
         return {"date": day, "embeds": 0, "linksCached": 0, "api": 0, "downloads": 0}
 
 

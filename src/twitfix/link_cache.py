@@ -17,13 +17,13 @@ class LinkCacheBase:
     def __init__(self, config) -> None:
         pass
 
-    def add_link_to_cache(self, video_link: str, vnf) -> bool:
+    async def add_link_to_cache(self, video_link: str, vnf) -> bool:
         pass
 
-    def get_link_from_cache(self, video_link: str) -> Optional[Any]:
+    async def get_link_from_cache(self, video_link: str) -> Optional[Any]:
         pass
 
-    def get_links_from_cache(self, field: str, count: int, offset: int) -> List[Any]:
+    async def get_links_from_cache(self, field: str, count: int, offset: int) -> List[Any]:
         pass
 
 
@@ -33,7 +33,7 @@ class MongoDBCache(LinkCacheBase):
         table = config.MONGO_DB_TABLE
         self.db = self.client[table]
 
-    def add_link_to_cache(self, video_link: str, vnf):
+    async def add_link_to_cache(self, video_link: str, vnf):
         try:
             out = self.db.linkCache.insert_one(vnf)
             logger.info(" ➤ [ + ] Link added to DB cache ")
@@ -42,7 +42,7 @@ class MongoDBCache(LinkCacheBase):
             logger.info(" ➤ [ X ] Failed to add link to DB cache")
         return False
 
-    def get_link_from_cache(self, video_link: str):
+    async def get_link_from_cache(self, video_link: str):
         collection = self.db.linkCache
         vnf = collection.find_one({"tweet": video_link})
         if vnf != None:
@@ -57,7 +57,7 @@ class MongoDBCache(LinkCacheBase):
         else:
             logger.info(" ➤ [ X ] Link not in DB cache")
 
-    def get_links_from_cache(self, field: str, count: int, offset: int):
+    async def get_links_from_cache(self, field: str, count: int, offset: int):
         collection = self.db.linkCache
         return list(
             collection.find(sort=[(field, pymongo.DESCENDING)])
@@ -71,7 +71,7 @@ class FirestoreCache(LinkCacheBase):
     namespace = UUID("135679dc-738a-4596-8bd2-9a70c1cea8c2")
 
     def __init__(self, config) -> None:
-        self.fire = google.cloud.firestore.Client()
+        self.fire = google.cloud.firestore.AsyncClient()
         self.links = self.fire.collection("links")
 
     def _hash(self, link: str):
@@ -79,23 +79,23 @@ class FirestoreCache(LinkCacheBase):
         # This allows us to lookup video links directly in the database.
         return uuid5(self.namespace, link).hex
 
-    def add_link_to_cache(self, video_link: str, vnf):
+    async def add_link_to_cache(self, video_link: str, vnf):
         id_ = self._hash(video_link)
-        self.links.document(id_).set(
+        await self.links.document(id_).set(
             {**vnf, "_id": id_, "created_at": google.cloud.firestore.SERVER_TIMESTAMP}
         )
 
-    def get_link_from_cache(self, video_link: str):
+    async def get_link_from_cache(self, video_link: str):
         ref = self.links.document(self._hash(video_link))
-        doc = ref.get()
+        doc = await ref.get()
         if not doc.exists:
             return None
-        ref.update({"hits": google.cloud.firestore.Increment(1)})
+        await ref.update({"hits": google.cloud.firestore.Increment(1)})
         return doc.to_dict()
 
-    def get_links_from_cache(self, field: str, count: int, offset: int):
+    async def get_links_from_cache(self, field: str, count: int, offset: int):
         docs = (
-            self.links.order_by(field, direction="DESCENDING")
+            await self.links.order_by(field, direction="DESCENDING")
             .offset(offset)
             .limit(count)
             .get()
@@ -118,11 +118,11 @@ class JSONCache(LinkCacheBase):
         with open(self.links_cache_filename, "w") as outfile:
             json.dump(self.link_cache, outfile, indent=4, sort_keys=True)
 
-    def add_link_to_cache(self, video_link, vnf):
+    async def add_link_to_cache(self, video_link, vnf):
         self.link_cache[video_link] = vnf
         self._write_cache()
 
-    def get_link_from_cache(self, video_link):
+    async def get_link_from_cache(self, video_link):
         if video_link in self.link_cache:
             logger.info(" ➤ [ ✔ ] Link located in json cache")
             vnf = self.link_cache[video_link]
@@ -133,7 +133,7 @@ class JSONCache(LinkCacheBase):
             logger.info(" ➤ [ X ] Link not in json cache")
             return None
 
-    def get_links_from_cache(self, field: str, count: int, offset: int):
+    async def get_links_from_cache(self, field: str, count: int, offset: int):
         sorted_cache = sorted(
             self.link_cache.values(), key=lambda l: l.get(field), reverse=True
         )

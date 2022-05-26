@@ -21,13 +21,13 @@ class StorageBase:
         self.config = config
         pass
 
-    def store_media(self, url: str) -> Tuple[bool, str]:
+    async def store_media(self, url: str) -> Tuple[bool, str]:
         """
         Download the given url for rehosting by our own system.
         """
         pass
 
-    def retrieve_media(self, own_identifier: str):
+    async def retrieve_media(self, own_identifier: str):
         """
         Retrieve a cached local version of the given URL
         """
@@ -40,7 +40,7 @@ class LocalFilesystem(StorageBase):
         self.base_url = config.BASE_URL
         self.basepath = pathlib.Path(config.STORAGE_LOCAL_BASE)
 
-    def store_media(self, url: str):
+    async def store_media(self, url: str):
         filename = url.rsplit("/", 1)[-1].split(".mp4")[0] + ".mp4"
 
         PATH = (self.basepath / filename).resolve()
@@ -56,7 +56,7 @@ class LocalFilesystem(StorageBase):
             shutil.copyfileobj(mp4file, output)
         return False, filename
 
-    def retrieve_media(self, own_identifier: str):
+    async def retrieve_media(self, own_identifier: str):
         PATH = (self.basepath / own_identifier).resolve()
         if not PATH.is_relative_to(self.basepath):
             raise OSError("Invalid media identifier.")
@@ -86,7 +86,7 @@ class GoogleCloudStorage(StorageBase):
             service_account_email=credentials.service_account_email,
         )
 
-    def store_media(self, url: str) -> Tuple[bool, str]:
+    async def store_media(self, url: str) -> Tuple[bool, str]:
         name = str(uuid5(self.STORAGE_NAMESPACE, url))
         blob = self.bucket.blob(name, chunk_size=2**18)
         if blob.exists():
@@ -101,7 +101,7 @@ class GoogleCloudStorage(StorageBase):
             urllib.request.urlopen(req, req.data)
         return False, name
 
-    def retrieve_media(self, own_identifier: str):
+    async def retrieve_media(self, own_identifier: str):
         url = self.bucket.get_blob(own_identifier).generate_signed_url(
             timedelta(minutes=5), credentials=self.signing_credentials, version="v4"
         )
@@ -109,10 +109,10 @@ class GoogleCloudStorage(StorageBase):
 
 
 class NoStorage(StorageBase):
-    def store_media(self, url: str):
+    async def store_media(self, url: str):
         return False, url
 
-    def retrieve_media(self, own_identifier: str):
+    async def retrieve_media(self, own_identifier: str):
         return {"output": "url", "url": own_identifier}
 
 
