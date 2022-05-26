@@ -8,9 +8,6 @@
     {{ vidurl }}  - Direct MP4 link to the video contained in the tweet
     {{ desc }}    - Tweet Text
     {{ url }}     - Base URL of the site hosting TwitFix
-    {{ urlDesc }} - HTTP Encoded Tweet Text
-    {{ urlUser }} - HTTP Encoded Username
-    {{ urlLink }} - HTTP Encoded source link
     {{ pfp }}     - URL of the posters PFP
  -->
 {% block head %}
@@ -26,7 +23,7 @@
 
     <meta property="og:description"                 content="{{ desc }}"  />
  
-    <link rel="alternate" href="{{ url }}/oembed.json?desc={{ urlUser }}&user=Twitter&link={{ urlLink }}&ttype=photo" type="application/json+oembed" title="{{ user }}">
+    <link rel="alternate" href="{{ url }}/oembed.json?desc={{ user | urlencode }}&user=Twitter&link={{ video_link | urlencode }}&ttype=photo" type="application/json+oembed" title="{{ user }}">
     <meta http-equiv = "refresh" content = "0; url = {{ vidlink }}" />
 {% endblock %}
 

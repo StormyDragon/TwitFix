@@ -38,9 +38,6 @@ async def top(request):
         logger.info(" ➤ [ ✔ ] Top video page loaded: None yet...")
         return sanic.response.empty()
     desc = re.sub(r" http.*t\.co\S+", "", vnf["description"])
-    urlUser = urllib.parse.quote(vnf["uploader"])
-    urlDesc = urllib.parse.quote(desc)
-    urlLink = urllib.parse.quote(vnf["url"])
     logger.info(" ➤ [ ✔ ] Top video page loaded: " + vnf["tweet"])
     return render_template(
         "inline.html",
@@ -55,9 +52,6 @@ async def top(request):
         appname=request.app.config.APP_NAME,
         repo=request.app.config.REPO,
         url=request.app.config.BASE_URL,
-        urlDesc=urlDesc,
-        urlUser=urlUser,
-        urlLink=urlLink,
         tweet=vnf["tweet"],
     )
 

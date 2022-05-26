@@ -22,7 +22,10 @@
     <meta name="twitter:title"             content="{{ user }} (@{{ screenName }})"  />
     <meta property="og:image"              content="{{ pic }}" />
 
-    <link rel="alternate" href="{{ url }}/oembed.json?desc={{ urlUser }}&user={{ urlDesc }}&link={{ urlLink }}&ttype=video" type="application/json+oembed" title="{{ user }}">
+    <link rel="alternate" 
+        href="{{ url }}/oembed.json?desc={{ user | urlencode }}&user={{ desc | truncate(220, True) | urlencode }}&link={{ video_link | urlencode }}&ttype=video" 
+        type="application/json+oembed" 
+        title="{{ user }}">
     <meta http-equiv = "refresh" content = "0; url = {{ vidlink }}" />
 {% endblock %}
 

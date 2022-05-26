@@ -1,8 +1,5 @@
 import json
 import re
-import textwrap
-import urllib.parse
-import urllib.request
 
 import sanic
 import sanic.response
@@ -498,9 +495,6 @@ async def embed(request, video_link, vnf, image):
     )
 
     desc = re.sub(r" http.*t\.co\S+", "", vnf["description"])
-    urlUser = urllib.parse.quote(vnf["uploader"])
-    urlDesc = urllib.parse.quote(desc)
-    urlLink = urllib.parse.quote(video_link)
     likeDisplay = "\n\n💖 " + str(vnf["likes"]) + " 🔁 " + str(vnf["rts"]) + "\n"
 
     try:
@@ -533,14 +527,8 @@ async def embed(request, video_link, vnf, image):
         image = vnf["images"][image]
         template = "image.html"
     if vnf["type"] == "Video":
-        urlDesc = urllib.parse.quote(
-            textwrap.shorten(desc, width=220, placeholder="...")
-        )
         template = "video.html"
     if vnf["type"] == "":
-        urlDesc = urllib.parse.quote(
-            textwrap.shorten(desc, width=220, placeholder="...")
-        )
         template = "video.html"
 
     # Change the theme color to red if this post is not worksafe.
@@ -559,14 +547,12 @@ async def embed(request, video_link, vnf, image):
         desc=desc,
         pic=image,
         user=vnf["uploader"],
+        userScreenName=f'{vnf["uploader"]} (@{vnf["screen_name"]})',
         video_link=video_link,
         color=color,
         appname=request.app.config.APP_NAME,
         repo=request.app.config.REPO,
         url=request.app.config.BASE_URL,
-        urlDesc=urlDesc,
-        urlUser=urlUser,
-        urlLink=urlLink,
     )
 
 

@@ -103,7 +103,11 @@
         border: solid .3vmin #8ebf42;
     }
 </style>
-<link rel="alternate" href="{{ url }}/oembed.json?desc={{ urlUser }}&user={{ urlDesc }}&link={{ urlLink }}" type="application/json+oembed" title="{{ user }}"> 
+<link rel="alternate" 
+    href="{{ url }}/oembed.json?desc={{ user | urlencode }}&user={{ desc | truncate(220, True) | urlencode }}&link={{ video_link | urlencode }}" 
+    type="application/json+oembed" 
+    title="{{ user }}"
+/> 
 
 {% endblock %} 
 
