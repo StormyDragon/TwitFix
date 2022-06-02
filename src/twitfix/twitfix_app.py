@@ -532,7 +532,7 @@ async def embed(request, video_link, vnf, image):
         template = "video.html"
 
     # Change the theme color to red if this post is not worksafe.
-    color = "#800020" if vnf["nsfw"] else "#7FFFD4"
+    color = "#800020" if vnf.get("nsfw") else "#7FFFD4"
 
     return await render_template(
         request,
