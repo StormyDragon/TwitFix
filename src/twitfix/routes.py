@@ -13,6 +13,7 @@ from .sanic_jinja import configure_jinja
 from .stats_module import initialize_stats
 from .storage_module import initialize_storage
 from .twitfix_app import twitfix_app
+from .twitfix_debug import debug
 from .twitfix_stats import stats
 from .twitfix_toys import toy
 
@@ -30,6 +31,7 @@ app = sanic.Sanic(
 )
 app.blueprint(twitfix_app)
 app.blueprint(stats)
+app.blueprint(debug)
 app.blueprint(toy)
 
 app.extend(built_in_extensions=False, extensions=[HTTPExtension, OpenAPIExtension])
