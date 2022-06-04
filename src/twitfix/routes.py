@@ -23,7 +23,11 @@ async def lock_stats(request):
     return sanic.response.empty(status=401)
 
 
-app = sanic.Sanic("twitfix", env_prefix="TWITFIX_")
+app = sanic.Sanic(
+    "twitfix",
+    env_prefix="TWITFIX_",
+    configure_logging=False,
+)
 app.blueprint(twitfix_app)
 app.blueprint(stats)
 app.blueprint(toy)

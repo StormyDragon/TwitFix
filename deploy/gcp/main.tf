@@ -83,6 +83,7 @@ locals {
     "TWITFIX_TWITTER_API_SECRET"    = "[keep-in-secret-file]"
     "TWITFIX_TWITTER_ACCESS_TOKEN"  = "[keep-in-secret-file]"
     "TWITFIX_TWITTER_ACCESS_SECRET" = "[keep-in-secret-file]"
+    "TWITFIX_DEPLOY_TARGET"         = "GCP"
   }
   config               = merge(local.default_config, jsondecode(data.local_file.config.content))
   project_source_path  = abspath("${path.cwd}/../../src")

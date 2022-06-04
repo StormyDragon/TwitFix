@@ -12,6 +12,7 @@ services:
       - mongo
     environment:
       TWITFIX_CONFIG_FROM: environment
+      TWITFIX_DEPLOY_TARGET: local
       TWITFIX_LINK_CACHE: db
       TWITFIX_MONGO_DB: mongodb://mongo:dra8onrulz@mongo:27017/
       TWITFIX_MONGO_DB_TABLE: TwiFix
