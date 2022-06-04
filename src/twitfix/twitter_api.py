@@ -64,7 +64,7 @@ class Includes:
     tweets: Sequence[Tweet]
 
 
-class TweetResponse:
+class TweetsResponse:
     data: Sequence[Tweet]
     includes: Includes
 
@@ -108,7 +108,7 @@ class Twitter:
     async def token(self):
         pass
 
-    async def tweets(self, *ids) -> TweetResponse:
+    async def tweets(self, *ids) -> TweetsResponse:
         response: httpx.Response = await self.__client.request(
             "GET",
             "https://api.twitter.com/2/tweets",
