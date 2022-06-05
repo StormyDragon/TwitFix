@@ -36,7 +36,9 @@ def initialize_app(app: sanic.Sanic):
         except LookupError:
             print("Cloud logging; no request in trace context")
         except AttributeError:
-            print("Cloud logging; no trace context in request")
+            # Only happens for logs sent during server start, once our function
+            # initializes the context var this stops occurring.
+            pass
 
         return None, None, None, False
 
