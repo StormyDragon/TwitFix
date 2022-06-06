@@ -17,7 +17,6 @@ youtube_dl = "^2021.12.17"
 twitter = "^1.19.3"
 sanic = { version = "^22.3.2", extras = ["ext"] }
 Jinja2 = "^3.1.2"
-requests = "^2.27.1"
 
 # Local server deployment optionals
 pymongo = { version = "^4.0.2", optional=true }
