@@ -1,7 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from types import SimpleNamespace
-from typing import Literal, Sequence
+from typing import Dict, Literal, Sequence, Tuple
 
 import httpx
 
@@ -31,6 +31,8 @@ class Tweet:
     in_reply_to_user_id: str | None
     lang: str
     author_id: str
+    possibly_sensitive: bool
+    display_text_range: Tuple[int, int]
     referenced_tweets: Sequence[TweetReference]
     attachments: TweetAttachments
     created_at: str  # ISO datetime
@@ -52,16 +54,16 @@ class MediaPhoto:
 
 class MediaVideo:
     media_key: str
-    type: Literal["video"]
+    type: Literal["video", "animated_gif"]
     width: int
     height: int
     variants: Sequence[MediaVideoItem]
 
 
 class Includes:
-    media: Sequence[MediaVideo | MediaPhoto]
-    users: Sequence[User]
-    tweets: Sequence[Tweet]
+    media: Dict[str, MediaVideo | MediaPhoto]
+    users: Dict[str, User]
+    tweets: Dict[str, Tweet]
 
 
 class TweetsResponse:
@@ -93,6 +95,24 @@ def credentialed_client(api_key: str, api_secret: str):
         request.headers.update({"Authorization": f"Bearer {token}"})
 
     return httpx.AsyncClient(event_hooks={"request": [token_auth]})
+
+
+def convert_tweets_lists_to_map(obj):
+    # convert data
+    obj.data = {i["id"]: i for i in obj.data}
+    # convert media
+    obj.includes.media = {i["media_key"]: i for i in obj.includes.media or []}
+    # convert users
+    obj.includes.users = {i["id"]: i for i in obj.includes.users or []}
+    # convert extra tweets
+    obj.includes.tweets = {i["id"]: i for i in obj.includes.tweets or []}
+    return obj
+
+
+def convert_users_lists_to_map(obj):
+    # convert data
+    obj.data = {i["id"]: i for i in obj.data}
+    return obj
 
 
 class Twitter:
@@ -127,6 +147,8 @@ class Twitter:
                         "created_at",
                         "attachments",
                         "referenced_tweets",
+                        "possibly_sensitive",
+                        "display_text_range",
                         "lang",
                     ]
                 ),
@@ -150,17 +172,19 @@ class Twitter:
                 ),
             },
         )
-        return json.loads(response.text, object_hook=lambda d: SimpleNamespace(**d))
+        output = json.loads(response.text, object_hook=lambda d: SimpleNamespace(**d))
+        return convert_tweets_lists_to_map(output)
 
     async def users(self, *users) -> UsersResponse:
         response: httpx.Response = await self.__client.request(
             "GET",
             "https://api.twitter.com/2/users",
             params={
-                "ids": users,
+                "ids": ",".join(users),
                 "user.fields": ",".join(
                     ["name", "username", "profile_image_url", "protected"]
                 ),
             },
         )
-        return json.loads(response.text, object_hook=lambda d: SimpleNamespace(**d))
+        output = json.loads(response.text, object_hook=lambda d: SimpleNamespace(**d))
+        return convert_users_lists_to_map(output)
