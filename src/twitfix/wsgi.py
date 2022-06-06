@@ -3,16 +3,20 @@ import os
 
 from .routes import app
 
-if app.config.get('DEPLOY_TARGET') == 'GCP':
+if app.config.get("DEPLOY_TARGET") == "GCP":
     import google.cloud.logging_v2
 
     from .cloud_logging import initialize_app as init_cloud_logging
+
     client = google.cloud.logging_v2.Client()
     client.setup_logging()
     init_cloud_logging(app)
 else:
-    import logging
-    logging.basicConfig()
+    import logging.config
+
+    import sanic.log
+
+    logging.config.dictConfig(sanic.log.LOGGING_CONFIG_DEFAULTS)
 
 
 def main():
