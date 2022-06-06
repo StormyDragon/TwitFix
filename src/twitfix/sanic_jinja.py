@@ -31,9 +31,12 @@ def using_template(template_name: str):
                 return response
 
         return replacer
+
     return decorator
 
 
 async def render_template(request, template_name, **kwargs):
     template = request.app.config.JINJA.get_template(template_name)
-    return sanic.html(await template.render_async(kwargs))
+    return sanic.html(
+        await template.render_async(kwargs), headers={"cache-control": "no-cache"}
+    )
