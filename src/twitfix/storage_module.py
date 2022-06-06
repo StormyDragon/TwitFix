@@ -10,10 +10,9 @@ from uuid import UUID, uuid5
 from sanic.log import logger
 
 with suppress(ImportError):
-    import google.auth
     import google.auth.compute_engine
+    import google.auth.transport.requests
     import google.cloud.storage
-    import requests
 
 
 class StorageBase:
@@ -78,10 +77,11 @@ class GoogleCloudStorage(StorageBase):
         bucket = config.STORAGE_BUCKET
         self.client = google.cloud.storage.Client()
         self.bucket = self.client.get_bucket(bucket)
-        auth_session = requests.Session()
         credentials, project = google.auth.default()
+        request = google.auth.transport.requests.Request()
+        credentials.refresh(request)
         self.signing_credentials = google.auth.compute_engine.IDTokenCredentials(
-            auth_session.request,
+            request,
             "",
             service_account_email=credentials.service_account_email,
         )
