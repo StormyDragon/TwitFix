@@ -55,6 +55,15 @@ async def default(request):
         return sanic.response.redirect(request.app.config.REPO, status=301)
 
 
+
+@twitfix_app.get("/<username:str>/status/<tweet_id:str>/photo/<item:int>")
+@twitfix_app.get("/<username:str>/status/<tweet_id:str>/video/<item:int>")
+async def handle_media(request: sanic.Request, username: str, tweet_id: str, item: int):
+    # Display card with the chosen media (photo 2/4)
+    clean = f"https://twitter.com/{username}/status/{tweet_id}"
+    return await embed_video(request, clean, item)
+
+
 @twitfix_app.route("/oembed.json")  # oEmbed endpoint
 async def oembedend(request):
     desc = request.args.get("desc", None)
@@ -96,7 +105,7 @@ async def twitfix(request, sub_path):
             logger.info(f" ➤ [ R ] Redirect to MP4 using {request.host}")
             return await dir(request, sub_path)
 
-    elif request.url.endswith((".mp4","%2Emp4")):
+    elif request.url.endswith((".mp4", "%2Emp4")):
         twitter_url = "https://twitter.com/" + sub_path
 
         if "?" not in request.url:
@@ -106,7 +115,7 @@ async def twitfix(request, sub_path):
 
         return await dl(request, clean)
 
-    elif request.url.endswith((".json","%2Ejson")):
+    elif request.url.endswith((".json", "%2Ejson")):
         twitter_url = "https://twitter.com/" + sub_path
 
         if "?" not in request.url:
@@ -126,17 +135,6 @@ async def twitfix(request, sub_path):
             )
         else:
             return sanic.response.json(vnf)
-
-    elif request.url.endswith(("/1","/2","/3","/4","%2F1","%2F2","%2F3","%2F4")):
-        twitter_url = "https://twitter.com/" + sub_path
-
-        if "?" not in request.url:
-            clean = twitter_url[:-2]
-        else:
-            clean = twitter_url
-
-        image = int(request.url[-1]) - 1
-        return await embed_video(request, clean, image)
 
     if match is not None:
         twitter_url = sub_path
