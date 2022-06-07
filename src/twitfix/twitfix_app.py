@@ -240,7 +240,7 @@ async def dir(request, sub_path):
         return sanic.response.redirect(url, status=301)
 
 
-@twitfix_app.route("/favicon.ico")  # This shit don't work
+@twitfix_app.route("/favicon.ico")
 async def favicon(request):
     return await sanic.response.file("static/favicon.ico", mime_type="image/x-icon")
 
