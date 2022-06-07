@@ -87,7 +87,6 @@ async def oembedend(request):
 async def twitfix(request, sub_path):
     user_agent = request.headers.get("user-agent")
     match = pathregex.search(sub_path)
-    logger.info(request.url)
 
     if request.host.startswith(
         f"d."
